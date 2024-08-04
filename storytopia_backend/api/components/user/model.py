@@ -6,7 +6,7 @@ Classes:
     profile picture, bio, followers, following, and different categories of books.
 """
 from typing import List
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 
 class User(BaseModel):
     """
@@ -25,7 +25,6 @@ class User(BaseModel):
         private_books (List[str]): The list of private book IDs created by this user.
     """
     username: str
-    email: EmailStr
     profile_picture: str
     bio: str
     followers: List[str] = []
@@ -34,3 +33,4 @@ class User(BaseModel):
     saved_books: List[str] = []
     public_books: List[str] = []
     private_books: List[str] = []
+    createdAt: str

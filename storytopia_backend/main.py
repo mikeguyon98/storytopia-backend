@@ -1,31 +1,23 @@
 """
 This module contains the main FastAPI application.
 """
-
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from storytopia_backend.api.routes import router as api_router
 from dotenv import load_dotenv
-from storytopia_backend.models import User
-from storytopia_backend.auth_utils import get_current_user
+import os
 
 load_dotenv()
 
 app = FastAPI()
 
+# Can add prefix as , prefix = "/api/v1/"
+app.include_router(api_router)
 
-@app.get("/user", response_model=User)
-async def read_user(current_user: User = Depends(get_current_user)) -> User:
+@app.get("/")
+async def root():
     """
-    Retrieve the current user.
-
-    Parameters:
-        current_user (User): The current user object.
-
-    Returns:
-        User: The current user.
-    """
-    return current_user
-
+    Root endpoint that returns a welcome message.
 
 origins = [
     "http://localhost:3000",  # Replace with your actual origins
