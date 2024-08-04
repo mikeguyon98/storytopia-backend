@@ -1,18 +1,17 @@
-"""
-This module initializes the Firebase application and sets up the Firestore client.
-
-It imports the necessary Firebase Admin SDK modules, loads the credentials from a JSON file,
-initializes the Firebase app, and creates a Firestore client instance.
-
-Modules:
-	firebase_admin: The Firebase Admin SDK.
-	credentials: Used to authenticate the Firebase app.
-	firestore: Firestore client for database operations.
-"""
+import os
+import json
 import firebase_admin
-from firebase_admin import credentials, firestore
+from firebase_admin import credentials
 
-cred = credentials.Certificate("./repurpose-ai-firebase-adminsdk-kf6c0-cd0dd6cdfd.json")
-firebase_admin.initialize_app(cred)
+cred_json = os.getenv("FIREBASE_CREDENTIALS")
+if cred_json:
+    cred_dict = json.loads(cred_json)
+    cred = credentials.Certificate(cred_dict)
+    firebase_admin.initialize_app(cred)
+else:
+    raise ValueError("FIREBASE_CREDENTIALS environment variable not set")
+
+# Now you can use Firebase services
+from firebase_admin import firestore
 
 db = firestore.client()
