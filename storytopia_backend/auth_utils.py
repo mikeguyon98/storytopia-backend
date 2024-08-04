@@ -4,7 +4,7 @@ Module for authentication utilities.
 from fastapi import HTTPException, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from firebase_admin import auth
-from firebase_config import db
+from .firebase_config import db
 
 security = HTTPBearer()
 

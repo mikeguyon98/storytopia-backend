@@ -3,8 +3,8 @@ This module contains the main FastAPI application.
 """
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from models import User
-from auth_utils import get_current_user
+from .models import User
+from .auth_utils import get_current_user
 
 
 app = FastAPI()
