@@ -19,6 +19,11 @@ async def root():
     """
     Root endpoint that returns a welcome message.
 
+    Returns:
+        dict: A dictionary containing a welcome message.
+    """
+    return {"message": "Welcome to the API"}
+
 origins = [
     "http://localhost:3000",  # Replace with your actual origins
 ]
