@@ -3,9 +3,8 @@ This module contains the main FastAPI application.
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from storytopia_backend.api.routes import router as api_router
 from dotenv import load_dotenv
-import os
+from storytopia_backend.api.routes import router as api_router
 
 load_dotenv()
 
