@@ -5,7 +5,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from storytopia_backend.api.routes import router as api_router
 
-
 app = FastAPI()
 
 # Can add prefix as , prefix = "/api/v1/"
