@@ -2,6 +2,8 @@ import os
 import json
 import firebase_admin
 from firebase_admin import credentials
+from firebase_admin import firestore
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -15,6 +17,5 @@ else:
     raise ValueError("FIREBASE_CREDENTIALS environment variable not set")
 
 # Now you can use Firebase services
-from firebase_admin import firestore
 
 db = firestore.client()

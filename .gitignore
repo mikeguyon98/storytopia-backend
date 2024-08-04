@@ -1,4 +1,9 @@
 .venv/
 .env
 repurpose-ai-firebase-adminsdk-kf6c0-cd0dd6cdfd.json
-**/__pycache__/
+.vscode/
+__pycache__/
+
+# Ignore Python bytecode files
+*.pyc
+*.pyo
