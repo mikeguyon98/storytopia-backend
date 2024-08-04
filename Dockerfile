@@ -27,5 +27,7 @@ COPY storytopia_backend /code/storytopia_backend
 RUN poetry config virtualenvs.create false \
     && poetry install --no-interaction --no-ansi
 
+EXPOSE 8080
+
 # Command to run the application
-CMD ["uvicorn", "storytopia_backend.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["poetry", "run", "uvicorn", "storytopia_backend.main:app", "--host", "0.0.0.0", "--port", "8080"]
