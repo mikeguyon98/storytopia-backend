@@ -33,4 +33,3 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(
             raise HTTPException(status_code=404, detail="User not found")
     except Exception as exc:
         raise HTTPException(status_code=401, detail=f"Invalid token {exc}") from exc
-    
