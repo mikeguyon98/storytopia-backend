@@ -19,6 +19,15 @@ fastapi_api
 │   │   │   │   │   ├── invitation.html
 │   │   │   │   └── tests/
 │   │   │   │       ├── test_user.py
+│   │   │   ├── book/
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── controller.py
+│   │   │   │   ├── model.py
+│   │   │   │   ├── repository.py
+│   │   │   │   ├── services.py
+│   │   │   │   ├── templates/
+│   │   │   │   └── tests/
+│   │   │   │       ├── test_book.py
 │   │   ├── middleware/
 │   │       ├── __init__.py
 │   │       ├── compression.py
