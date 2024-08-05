@@ -4,9 +4,8 @@ This module contains the main FastAPI application.
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from storytopia_backend.api.routes import router as api_router
 from dotenv import load_dotenv
-import os
+from storytopia_backend.api.routes import router as api_router
 
 load_dotenv()
 
@@ -25,7 +24,6 @@ async def root():
         dict: A dictionary containing a welcome message.
     """
     return {"message": "Welcome to the API"}
-
 
 origins = [
     "http://localhost:3000",  # Replace with your actual origins
