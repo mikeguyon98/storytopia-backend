@@ -5,6 +5,7 @@ from fastapi import HTTPException, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from firebase_admin import auth
 from storytopia_backend.firebase_config import db
+from storytopia_backend.api.components.user.model import User
 
 security = HTTPBearer()
 
@@ -28,7 +29,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(
         user_ref = db.collection('users').document(user_id)
         user = user_ref.get()
         if user.exists:
-            return user.to_dict()
+            return User(**user.to_dict())
         else:
             raise HTTPException(status_code=404, detail="User not found")
     except Exception as exc:

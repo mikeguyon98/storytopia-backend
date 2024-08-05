@@ -14,6 +14,35 @@ class User(BaseModel):
 
     Attributes:
         username (str): The username of the user.
+        profile_picture (str): The URL to the profile picture of the user.
+        bio (str): The bio of the user.
+        followers (List[str]): The list of user IDs following this user.
+        following (List[str]): The list of user IDs this user is following.
+        liked_books (List[str]): The list of book IDs liked by this user.
+        saved_books (List[str]): The list of book IDs saved by this user.
+        public_books (List[str]): The list of public book IDs created by this user.
+        private_books (List[str]): The list of private book IDs created by this user.
+        createdAt (str): The timestamp when the user was created.
+        id (str): The unique identifier
+    """
+    username: str
+    profile_picture: str
+    bio: str
+    followers: List[str] = []
+    following: List[str] = []
+    liked_books: List[str] = []
+    saved_books: List[str] = []
+    public_books: List[str] = []
+    private_books: List[str] = []
+    createdAt: str
+    id: str
+
+class UserUpdate(BaseModel):
+    """
+    Represents a user with various attributes.
+
+    Attributes:
+        username (str): The username of the user.
         email (EmailStr): The email of the user.
         profile_picture (str): The URL to the profile picture of the user.
         bio (str): The bio of the user.
@@ -33,4 +62,3 @@ class User(BaseModel):
     saved_books: List[str] = []
     public_books: List[str] = []
     private_books: List[str] = []
-    createdAt: str
