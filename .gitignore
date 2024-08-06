@@ -7,3 +7,4 @@ __pycache__/
 # Ignore Python bytecode files
 *.pyc
 *.pyo
+.DS_Store
