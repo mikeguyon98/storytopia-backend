@@ -50,10 +50,7 @@ async def update_user_endpoint(user_update: UserUpdate, current_user: User = Dep
     Returns:
         User: The updated user object.
     """
-    print("-------USERNAME-------")
-    print(current_user.username)
-    updated_user = await update_user_details(current_user.id, user_update)
-    return updated_user
+    return await update_user_details(current_user.id, user_update)
 
 @router.post("/follow/{user_id}", response_model=None)
 async def follow_user_endpoint(user_id: str, current_user: User = Depends(get_current_user)):
