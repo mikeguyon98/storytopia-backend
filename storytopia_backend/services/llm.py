@@ -65,7 +65,6 @@ class StoryGenerationService:
         """
         response = self.model.generate_content(full_prompt)
         generated_text = response.text
-        # return generated_text
 
         try:
             json.loads(generated_text)  # Just to validate JSON structure
@@ -82,18 +81,16 @@ class StoryGenerationService:
             )
 
 
-# Sample test
-if __name__ == "__main__":
-    # Create StoryGenerationService instance
-    story_service = StoryGenerationService(
-        os.getenv("GOOGLE_CLOUD_PROJECT"),
-        os.getenv("GOOGLE_CLOUD_LOCATION"),
-        "gemini-1.5-pro",
-    )
+# # Sample test
+# if __name__ == "__main__":
+#     # Create StoryGenerationService instance
+#     story_service = StoryGenerationService(
+#         os.getenv("GOOGLE_CLOUD_PROJECT"),
+#         os.getenv("GOOGLE_CLOUD_LOCATION"),
+#         "gemini-1.5-pro",
+#     )
 
-    # Test generate_story function
-    test_prompt = "Nobel Prize Winner in Chemistry wins UFC Welterweight Title"
-    testing_story_parts = asyncio.run(story_service.generate_story(test_prompt))
-
-    # Print the generated story as a list
-    print(testing_story_parts)
+#     # Test generate_story function
+#     test_prompt = "Nobel Prize Winner in Chemistry wins UFC Welterweight Title"
+#     testing_story_parts = asyncio.run(story_service.generate_story(test_prompt))
+#     print(testing_story_parts)
