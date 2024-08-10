@@ -17,6 +17,8 @@ Functions:
     update_user_details: Update user details.
 """
 from typing import List
+from storytopia_backend.api.components.story.repository import get_story_by_id
+from storytopia_backend.api.components.story.model import Story
 from .model import User, UserUpdate
 from .repository import get_user_by_id, update_user
 
@@ -82,3 +84,16 @@ async def get_following(user_id: str) -> List[User]:
     """
     user = await get_user_by_id(user_id)
     return [await get_user_by_id(following_id) for following_id in user.following]
+
+async def get_user_stories(story_ids: List[str]) -> List[Story]:
+    """
+    Retrieve a list of stories based on the provided story IDs.
+
+    Parameters:
+        story_ids (List[str]): The list of story IDs to retrieve.
+
+    Returns:
+        List[Story]: A list of story objects.
+    """
+    return [await get_story_by_id(story_id) for story_id in story_ids]
+
