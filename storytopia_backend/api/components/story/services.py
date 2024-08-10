@@ -6,29 +6,11 @@ from storytopia_backend.services.llm import StoryGenerationService
 from storytopia_backend.services.stable_diffusion import ImageGenerationService
 from storytopia_backend.api.components.user.repository import update_user
 from google.cloud import storage
+from storytopia_backend.api.components.story import image_service, story_service
 import json
-import os
-from openai import OpenAI
-from typing import Dict, Any
 from dotenv import load_dotenv
 
 load_dotenv()
-
-# Initialize services
-story_service = StoryGenerationService(
-    os.getenv("GOOGLE_CLOUD_PROJECT"),
-    os.getenv("GOOGLE_CLOUD_LOCATION"),
-    "gemini-1.5-pro",
-)
-
-openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-storage_client = storage.Client()
-image_service = ImageGenerationService(
-    openai_client=openai_client,
-    storage_client=storage_client,
-    bucket_name=os.getenv("GCS_BUCKET_NAME"),
-    folder_name="storytopia_images_dev",
-)
 
 
 async def create_user_story(story_post: StoryPost, current_user: User) -> Story:
