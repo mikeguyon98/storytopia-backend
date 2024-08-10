@@ -26,7 +26,7 @@ async def root():
     return {"message": "Welcome to the API"}
 
 origins = [
-    "http://localhost:3000",  # Replace with your actual origins
+    "http://localhost:3001",  # Replace with your actual origins
 ]
 
 app.add_middleware(

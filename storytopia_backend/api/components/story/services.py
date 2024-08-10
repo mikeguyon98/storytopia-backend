@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from .repository import create_story, get_story_by_id
 from storytopia_backend.services.llm import StoryGenerationService
 from storytopia_backend.services.stable_diffusion import ImageGenerationService
+from storytopia_backend.api.components.user.repository import update_user
 from google.cloud import storage
 import json
 import os
@@ -59,7 +60,7 @@ async def get_story(story_id: str, user_id: str) -> Story:
 
 
 async def generate_story_with_images(
-    prompt: str, style: str, current_user: User
+    prompt: str, style: str, private: bool, current_user: User,
 ) -> Story:
     """
     Generate a story based on the given prompt, create images, and return a complete Story object.
@@ -79,7 +80,7 @@ async def generate_story_with_images(
         description=story_data["Prompt"],
         story_pages=story_data["Summaries"],
         story_images=image_urls,
-        private=False,  # May want to make this configurable
+        private=private,  # May want to make this configurable
         createdAt=datetime.now(timezone.utc).isoformat(),
         id="",
         likes=0,
@@ -89,5 +90,12 @@ async def generate_story_with_images(
     # Save the story to the database
     story_id = await create_story(story.model_dump())
     story.id = story_id
+
+    if private:
+        current_user.private_books.append(story_id)
+    else:
+        current_user.public_books.append(story_id)
+
+    await update_user(current_user)
 
     return story
