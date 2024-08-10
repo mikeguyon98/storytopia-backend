@@ -3,6 +3,7 @@
 repurpose-ai-firebase-adminsdk-kf6c0-cd0dd6cdfd.json
 .vscode/
 __pycache__/
+poetry.lock
 
 # Ignore Python bytecode files
 *.pyc
