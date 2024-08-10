@@ -4,6 +4,9 @@ from storytopia_backend.api.components.user.model import User
 from .repository import get_all_stories
 from .model import StoryPost, Story
 from .services import create_user_story, get_story, generate_story_with_images
+from dotenv import load_dotenv
+
+load_dotenv()
 
 router = APIRouter()
 

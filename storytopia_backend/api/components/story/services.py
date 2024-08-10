@@ -9,6 +9,9 @@ import json
 import os
 from openai import OpenAI
 from typing import Dict, Any
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Initialize services
 story_service = StoryGenerationService(
