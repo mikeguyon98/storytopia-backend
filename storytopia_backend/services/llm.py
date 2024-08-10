@@ -23,13 +23,13 @@ class StoryGenerationService:
 
         Returns:
         - str: A JSON string containing the prompt, title, detailed scenes, and brief scenes.
-          The JSON structure is:
-          {
-              "Prompt": string,
-              "Title": string,
-              "Scenes": List[string],
-              "Summaries": List[string]
-          }
+        The JSON structure is:
+        {
+            "Prompt": string,
+            "Title": string,
+            "Scenes": List[string],
+            "Summaries": List[string]
+        }
         """
         full_prompt = f"""
         Generate a comic book story title and 10 scene descriptions based on the following prompt: {prompt}
@@ -51,11 +51,15 @@ class StoryGenerationService:
         }}
 
         For each detailed scene description in "Scenes":
-        - Be vivid and visual, focusing on what can be seen in a single image.
-        - Include important visual details about characters, setting, and action.
-        - Contribute to a coherent overall narrative arc.
-        - Add conversation dialogue (subtitle) for the character if needed.
-        - Length can vary as needed to fully describe the scene.
+        - Focus on clear, visually descriptive elements that can be depicted in a single image.
+        - Include relevant visual details about characters, setting, and action.
+        - Ensure the scenes contribute to a cohesive and engaging narrative arc.
+        - Dialogue (subtitle) should be brief and contribute positively to the story.
+        - Keep the description suitable for a general audience, avoiding any sensitive or controversial content.
+        - Ensure there are no copyright issues by not requesting specific copyrighted characters, logos, or branded content.
+        - Avoid requesting images of real people, especially public figures or celebrities.
+        - Don't include explicit violence, gore, or disturbing imagery in your prompts.
+        - Avoid prompts that could generate hate speech, discriminatory content, or extreme political imagery.
 
         For each brief scene summary in "Summaries":
         - Provide a concise summary of the scene, around 2-3 sentences.
@@ -63,9 +67,9 @@ class StoryGenerationService:
 
         Ensure the output is valid JSON format with matching numbers of detailed scenes and summaries.
         """
+
         response = self.model.generate_content(full_prompt)
         generated_text = response.text
-        # return generated_text
 
         try:
             json.loads(generated_text)  # Just to validate JSON structure
@@ -82,18 +86,16 @@ class StoryGenerationService:
             )
 
 
-# Sample test
-if __name__ == "__main__":
-    # Create StoryGenerationService instance
-    story_service = StoryGenerationService(
-        os.getenv("GOOGLE_CLOUD_PROJECT"),
-        os.getenv("GOOGLE_CLOUD_LOCATION"),
-        "gemini-1.5-pro",
-    )
+# # Sample test
+# if __name__ == "__main__":
+#     # Create StoryGenerationService instance
+#     story_service = StoryGenerationService(
+#         os.getenv("GOOGLE_CLOUD_PROJECT"),
+#         os.getenv("GOOGLE_CLOUD_LOCATION"),
+#         "gemini-1.5-pro",
+#     )
 
-    # Test generate_story function
-    test_prompt = "Nobel Prize Winner in Chemistry wins UFC Welterweight Title"
-    testing_story_parts = asyncio.run(story_service.generate_story(test_prompt))
-
-    # Print the generated story as a list
-    print(testing_story_parts)
+#     # Test generate_story function
+#     test_prompt = "Nobel Prize Winner in Chemistry wins UFC Welterweight Title"
+#     testing_story_parts = asyncio.run(story_service.generate_story(test_prompt))
+#     print(testing_story_parts)

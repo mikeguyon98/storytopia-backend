@@ -24,14 +24,16 @@ class ImageGenerationService:
         self.bucket = self.storage_client.bucket(self.bucket_name)
         self.folder_name = folder_name
 
-    async def generate_images(self, scene_descriptions: List[str]) -> List[str]:
+    async def generate_images(
+        self, scene_descriptions: List[str], style: str
+    ) -> List[str]:
         image_urls = []
         for index, description in enumerate(scene_descriptions):
             try:
                 # Generate image using DALL-E 3
                 response = self.openai_client.images.generate(
                     model="dall-e-3",
-                    prompt=description,
+                    prompt=f"{description} | Use this artistic style for the image: {style}",
                     size="1792x1024",
                     quality="standard",
                     n=1,
@@ -57,7 +59,7 @@ class ImageGenerationService:
             except Exception as e:
                 raise HTTPException(
                     status_code=500,
-                    detail=f"Error generating image for scene {index + 1}: {str(e)}",
+                    detail=f"Error generating image for scene {index + 1} with prompt '{description}': {str(e)}",
                 )
 
         return image_urls
@@ -70,19 +72,19 @@ class ImageGenerationService:
 
 
 # Factory function to create ImageGenerationService
-def create_image_generation_service(
-    openai_api_key: str,
-    gcs_bucket_name: str,
-    folder_name: str = "storytopia_dev",
-) -> ImageGenerationService:
-    openai_client = OpenAI(api_key=openai_api_key)
-    storage_client = storage.Client()
-    return ImageGenerationService(
-        openai_client=openai_client,
-        storage_client=storage_client,
-        bucket_name=gcs_bucket_name,
-        folder_name=folder_name,
-    )
+# def create_image_generation_service(
+#     openai_api_key: str,
+#     gcs_bucket_name: str,
+#     folder_name: str = "storytopia_dev",
+# ) -> ImageGenerationService:
+#     openai_client = OpenAI(api_key=openai_api_key)
+#     storage_client = storage.Client()
+#     return ImageGenerationService(
+#         openai_client=openai_client,
+#         storage_client=storage_client,
+#         bucket_name=gcs_bucket_name,
+#         folder_name=folder_name,
+#     )
 
 
 # # Test script

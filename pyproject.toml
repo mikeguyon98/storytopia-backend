@@ -77,8 +77,23 @@ google-cloud-aiplatform = "^1.60.0"
 vertexai = "^1.60.0"
 asyncio = "^3.4.3"
 openai = "^1.40.0"
+pytest = "^8.3.2"
+pylint = "^3.2.6"
+twisted = "^24.3.0"
 
+
+[tool.poetry.group.dev.dependencies]
+anyio = "^4.4.0"
+pytest-asyncio = "^0.23.8"
+pytest-tornasync = "^0.6.0.post2"
+pytest-trio = "^0.8.0"
+pytest-twisted = "^1.14.2"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore:Type google._upb._message:DeprecationWarning"
+]
