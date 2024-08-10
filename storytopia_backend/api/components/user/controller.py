@@ -19,9 +19,10 @@ from typing import List
 from fastapi import APIRouter, Depends
 from storytopia_backend.api.middleware.auth import get_current_user
 from .services import (
-    follow_user, get_followers, get_following, update_user_details
+    follow_user, get_followers, get_following, update_user_details, get_user_stories
 )
 from .model import User, UserUpdate
+from storytopia_backend.api.components.story.model import Story
 
 router = APIRouter()
 
@@ -92,3 +93,56 @@ async def get_following_endpoint(current_user: User = Depends(get_current_user))
         List[User]: A list of users the current user is following.
     """
     return await get_following(current_user.id)
+
+
+@router.get("/me/public_posts", response_model=List[Story])
+async def get_public_posts(current_user: User = Depends(get_current_user)) -> List[Story]:
+    """
+    Endpoint to retrieve the current user's public posts.
+
+    Parameters:
+        current_user (User): The current authenticated user.
+
+    Returns:
+        List[Story]: A list of public stories created by the user.
+    """
+    return await get_user_stories(current_user.public_books)
+
+@router.get("/me/private_posts", response_model=List[Story])
+async def get_private_posts(current_user: User = Depends(get_current_user)) -> List[Story]:
+    """
+    Endpoint to retrieve the current user's private posts.
+
+    Parameters:
+        current_user (User): The current authenticated user.
+
+    Returns:
+        List[Story]: A list of private stories created by the user.
+    """
+    return await get_user_stories(current_user.private_books)
+
+@router.get("/me/saved_posts", response_model=List[Story])
+async def get_saved_posts(current_user: User = Depends(get_current_user)) -> List[Story]:
+    """
+    Endpoint to retrieve the current user's saved posts.
+
+    Parameters:
+        current_user (User): The current authenticated user.
+
+    Returns:
+        List[Story]: A list of saved stories saved by the user.
+    """
+    return await get_user_stories(current_user.saved_books)
+
+@router.get("/me/liked_posts", response_model=List[Story])
+async def get_liked_posts(current_user: User = Depends(get_current_user)) -> List[Story]:
+    """
+    Endpoint to retrieve the current user's liked posts.
+
+    Parameters:
+        current_user (User): The current authenticated user.
+
+    Returns:
+        List[Story]: A list of liked stories liked by the user.
+    """
+    return await get_user_stories(current_user.liked_books)

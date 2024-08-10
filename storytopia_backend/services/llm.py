@@ -16,13 +16,13 @@ class StoryGenerationService:
 
     async def generate_story(self, prompt: str) -> List[str]:
         """
-        Generate a multi-scene comic book story based on the given prompt.
+        Generate a multi-scene book story based on the given prompt.
 
         Args:
         - prompt (str): The prompt for the story.
 
         Returns:
-        - str: A JSON string containing the prompt, title, detailed scenes, and brief scenes.
+        - str: A JSON string containing the prompt, title, detailed scenes, and story text to accompany each image.
         The JSON structure is:
         {
             "Prompt": string,
@@ -44,8 +44,8 @@ class StoryGenerationService:
                 ...
             ],
             "Summaries": [
-                "Brief scene 1 summary",
-                "Brief scene 2 summary",
+                "scene 1 story text",
+                "scene 2 story text",
                 ...
             ]
         }}
@@ -61,9 +61,9 @@ class StoryGenerationService:
         - Don't include explicit violence, gore, or disturbing imagery in your prompts.
         - Avoid prompts that could generate hate speech, discriminatory content, or extreme political imagery.
 
-        For each brief scene summary in "Summaries":
-        - Provide a concise summary of the scene, around 2-3 sentences.
-        - Make it engaging and enjoyable for readers to read.
+        For each story text in "Summaries":
+        - Provide story text for each scenece, each around 3 to 4 sentences
+        - Make it engaging, enjoyable and educational for readers to read.
 
         Ensure the output is valid JSON format with matching numbers of detailed scenes and summaries.
         """

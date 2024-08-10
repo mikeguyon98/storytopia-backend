@@ -35,9 +35,9 @@ async def get_story_by_id_endpoint(
 
 @router.post("/generate-story-with-images")
 async def generate_story_with_images_endpoint(
-    prompt: str, style: str, current_user: User = Depends(get_current_user)
+    prompt: str, style: str, private: bool, current_user: User = Depends(get_current_user)
 ) -> Story:
     """
     Generate a story based on the given prompt, create images, and return a complete Story object.
     """
-    return await generate_story_with_images(prompt, style, current_user)
+    return await generate_story_with_images(prompt, style, private, current_user)
