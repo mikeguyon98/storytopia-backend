@@ -24,14 +24,16 @@ class ImageGenerationService:
         self.bucket = self.storage_client.bucket(self.bucket_name)
         self.folder_name = folder_name
 
-    async def generate_images(self, scene_descriptions: List[str]) -> List[str]:
+    async def generate_images(
+        self, scene_descriptions: List[str], style: str
+    ) -> List[str]:
         image_urls = []
         for index, description in enumerate(scene_descriptions):
             try:
                 # Generate image using DALL-E 3
                 response = self.openai_client.images.generate(
                     model="dall-e-3",
-                    prompt=description,
+                    prompt=f"{description} | Use this artistic style for the image: {style}",
                     size="1792x1024",
                     quality="standard",
                     n=1,

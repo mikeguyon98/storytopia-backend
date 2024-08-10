@@ -58,7 +58,9 @@ async def get_story(story_id: str, user_id: str) -> Story:
     return story_ref
 
 
-async def generate_story_with_images(prompt: str, current_user: User) -> Story:
+async def generate_story_with_images(
+    prompt: str, style: str, current_user: User
+) -> Story:
     """
     Generate a story based on the given prompt, create images, and return a complete Story object.
     """
@@ -67,7 +69,7 @@ async def generate_story_with_images(prompt: str, current_user: User) -> Story:
     story_data = json.loads(story_json)
 
     # Generate images based on the detailed scene descriptions
-    image_urls = await image_service.generate_images(story_data["Scenes"])
+    image_urls = await image_service.generate_images(story_data["Scenes"], style)
 
     # Create a Story object
     story = Story(
