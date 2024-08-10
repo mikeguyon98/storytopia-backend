@@ -40,7 +40,7 @@ class ImageGenerationService:
                     # Generate image using DALL-E 3
                     response = self.openai_client.images.generate(
                         model="dall-e-3",
-                        prompt=f"{description} | Use this artistic style for the image: {style}",
+                        prompt=f"{description} | Remove all dialogue/text in image. Use this artistic style for the image: {style}",
                         size="1792x1024",
                         quality="standard",
                         n=1,
