@@ -2,32 +2,11 @@ from .model import StoryPost, Story
 from storytopia_backend.api.components.user.model import User
 from datetime import datetime, timezone
 from .repository import create_story, get_story_by_id
-from storytopia_backend.services.llm import StoryGenerationService
-from storytopia_backend.services.stable_diffusion import ImageGenerationService
-from google.cloud import storage
+from storytopia_backend.api.components.story import image_service, story_service
 import json
-import os
-from openai import OpenAI
-from typing import Dict, Any
 from dotenv import load_dotenv
 
 load_dotenv()
-
-# Initialize services
-story_service = StoryGenerationService(
-    os.getenv("GOOGLE_CLOUD_PROJECT"),
-    os.getenv("GOOGLE_CLOUD_LOCATION"),
-    "gemini-1.5-pro",
-)
-
-openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-storage_client = storage.Client()
-image_service = ImageGenerationService(
-    openai_client=openai_client,
-    storage_client=storage_client,
-    bucket_name=os.getenv("GCS_BUCKET_NAME"),
-    folder_name="storytopia_images_dev",
-)
 
 
 async def create_user_story(story_post: StoryPost, current_user: User) -> Story:
@@ -59,7 +38,9 @@ async def get_story(story_id: str, user_id: str) -> Story:
 
 
 async def generate_story_with_images(
-    prompt: str, style: str, current_user: User
+    prompt: str,
+    style: str,
+    current_user: User,
 ) -> Story:
     """
     Generate a story based on the given prompt, create images, and return a complete Story object.
@@ -89,5 +70,4 @@ async def generate_story_with_images(
     # Save the story to the database
     story_id = await create_story(story.model_dump())
     story.id = story_id
-
     return story
