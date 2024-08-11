@@ -6,6 +6,7 @@ __pycache__/
 poetry.lock
 __pycache__
 **/__pycache__/
+.pytest_cache/
 
 # Ignore Python bytecode files
 *.pyc
