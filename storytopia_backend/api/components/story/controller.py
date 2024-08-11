@@ -4,7 +4,7 @@ from storytopia_backend.api.middleware.auth import get_current_user
 from storytopia_backend.api.components.user.model import User
 from .repository import get_all_stories
 from .model import StoryPost, Story
-from .services import create_user_story, get_story, generate_story_with_images, get_recent_public_stories, like_story, save_story
+from .services import create_user_story, get_story, generate_story_with_images, get_recent_public_stories, like_story, save_story, unlike_story, unsave_story
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -34,7 +34,7 @@ async def get_story_by_id_endpoint(
     return await get_story(story_id, current_user.id)
 
 
-@router.post("/stories/like")
+@router.post("/like")
 async def like_story_endpoint(story_id: str, current_user: User = Depends(get_current_user)):
     """
     Endpoint to like a story.
@@ -49,8 +49,23 @@ async def like_story_endpoint(story_id: str, current_user: User = Depends(get_cu
     await like_story(story_id, current_user.id)
     return {"message": "Story liked successfully"}
 
+@router.post("/unlike")
+async def unlike_story_endpoint(story_id: str, current_user: User = Depends(get_current_user)):
+    """
+    Endpoint to unlike a story.
 
-@router.post("/stories/save")
+    Parameters:
+        story_id (str): The ID of the story to unlike.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        dict: A message indicating the unlike action was successful.
+    """
+    await unlike_story(story_id, current_user.id)
+    return {"message": "Story unliked successfully"}
+
+
+@router.post("/save")
 async def save_story_endpoint(story_id: str, current_user: User = Depends(get_current_user)):
     """
     Endpoint to save a story.
@@ -64,6 +79,21 @@ async def save_story_endpoint(story_id: str, current_user: User = Depends(get_cu
     """
     await save_story(story_id, current_user.id)
     return {"message": "Story saved successfully"}
+
+@router.post("/unsave")
+async def unsave_story_endpoint(story_id: str, current_user: User = Depends(get_current_user)):
+    """
+    Endpoint to unsave a story.
+
+    Parameters:
+        story_id (str): The ID of the story to unsave.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        dict: A message indicating the unsave action was successful.
+    """
+    await unsave_story(story_id, current_user.id)
+    return {"message": "Story unsaved successfully"}
 
 
 @router.post("/generate-story-with-images")
