@@ -1,20 +1,18 @@
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, Query
 from storytopia_backend.api.middleware.auth import get_current_user
 from storytopia_backend.api.components.user.model import User
 from .repository import get_all_stories
-from datetime import datetime, timezone
-from .model import StoryPost, Story, GenerateStoryRequest
+from .model import StoryPost, Story
 from .services import (
     create_user_story,
     get_story,
-    create_story,
+    generate_story_with_images,
     get_recent_public_stories,
     like_story,
     save_story,
     unlike_story,
     unsave_story,
-    generate_story_with_images_background,
 )
 from dotenv import load_dotenv
 
@@ -119,43 +117,15 @@ async def unsave_story_endpoint(
 
 @router.post("/generate-story-with-images")
 async def generate_story_with_images_endpoint(
-    request: GenerateStoryRequest,
-    background_tasks: BackgroundTasks,
+    prompt: str,
+    style: str,
+    private: bool,
     current_user: User = Depends(get_current_user),
 ) -> Story:
     """
-    Initiate story generation based on the given prompt and return a minimal Story object.
+    Generate a story based on the given prompt, create images, and return a complete Story object.
     """
-    # Create a minimal Story object
-    initial_story = Story(
-        title="Story being generated...",
-        author=current_user.username,
-        author_id=current_user.id,
-        description=request.prompt,
-        story_pages=[],
-        story_images=[],
-        private=request.private,
-        createdAt=datetime.now(timezone.utc).isoformat(),
-        id="",
-        likes=[],
-        saves=[],
-    )
-
-    # Save the initial story to the database and get its ID
-    story_id = await create_story(initial_story.dict())
-    initial_story.id = story_id
-
-    # Add the story generation task to the background tasks
-    background_tasks.add_task(
-        generate_story_with_images_background,
-        story_id,
-        request.prompt,
-        request.style,
-        request.private,
-        current_user,
-    )
-
-    return initial_story
+    return await generate_story_with_images(prompt, style, private, current_user)
 
 
 @router.get("/explore", response_model=List[Story])

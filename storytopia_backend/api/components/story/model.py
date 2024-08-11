@@ -55,9 +55,3 @@ class StoryPost(BaseModel):
     title: str
     description: str
     private: bool
-
-
-class GenerateStoryRequest(BaseModel):
-    prompt: str
-    style: str
-    private: bool
