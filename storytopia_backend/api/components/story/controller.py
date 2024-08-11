@@ -124,9 +124,9 @@ async def generate_story_with_images_endpoint(
     current_user: User = Depends(get_current_user),
 ) -> Story:
     """
-    Generate a story based on the given prompt, create images, and return a Story object.
+    Initiate story generation based on the given prompt and return a minimal Story object.
     """
-    # Create an initial Story object with a "pending" status
+    # Create a minimal Story object
     initial_story = Story(
         title="Story being generated...",
         author=current_user.username,
@@ -139,11 +139,10 @@ async def generate_story_with_images_endpoint(
         id="",
         likes=[],
         saves=[],
-        status="pending",
     )
 
     # Save the initial story to the database and get its ID
-    story_id = await create_story(initial_story.model_dump())
+    story_id = await create_story(initial_story.dict())
     initial_story.id = story_id
 
     # Add the story generation task to the background tasks

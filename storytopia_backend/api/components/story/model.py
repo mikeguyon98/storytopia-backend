@@ -27,7 +27,6 @@ class Story(BaseModel):
         id (str): The unique identifier of the story.
         likes (int): The number of likes the story has received.
         saves (int): The number of times the story has been saved.
-        status (str): The current status of the story generation process.
     """
 
     title: str
@@ -41,7 +40,6 @@ class Story(BaseModel):
     id: str
     likes: List[str]
     saves: List[str]
-    status: str
 
 
 class StoryPost(BaseModel):
