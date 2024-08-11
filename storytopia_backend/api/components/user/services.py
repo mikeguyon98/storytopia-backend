@@ -16,29 +16,47 @@ Functions:
     get_following: Get the list of users a user is following.
     update_user_details: Update user details.
 """
+
 from typing import List
+from fastapi import HTTPException
 from storytopia_backend.api.components.story.repository import get_story_by_id
 from storytopia_backend.api.components.story.model import Story
 from .model import User, UserUpdate
-from .repository import get_user_by_id, update_user
+from .repository import get_user_by_id, update_user, check_username_exists
+
 
 async def update_user_details(user_id: str, user_update: UserUpdate) -> User:
     """
     Update user details.
 
     Parameters:
-        user_id (str): The ID of the user to update.
-        user_update (UserUpdate): The updated user information.
+    user_id (str): The ID of the user to update.
+    user_update (UserUpdate): The updated user information.
 
     Returns:
-        User: The updated user object.
+    User: The updated user object.
+
+    Raises:
+    HTTPException: If the username already exists for another user.
     """
     user = await get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Check if username is being updated
+    if user_update.username and user_update.username != user.username:
+        # Check if the new username already exists
+        username_exists = await check_username_exists(user_update.username)
+        if username_exists:
+            raise HTTPException(status_code=400, detail="Username already exists")
+
     for key, value in user_update.model_dump().items():
-        if value:
+        if value is not None:
             setattr(user, key, value)
+
     await update_user(user)
     return user
+
 
 async def follow_user(current_user_id: str, follow_user_id: str) -> None:
     """
@@ -59,6 +77,7 @@ async def follow_user(current_user_id: str, follow_user_id: str) -> None:
         await update_user(current_user)
         await update_user(user_to_follow)
 
+
 async def get_followers(user_id: str) -> List[User]:
     """
     Get the list of followers for a user.
@@ -71,6 +90,7 @@ async def get_followers(user_id: str) -> List[User]:
     """
     user = await get_user_by_id(user_id)
     return [await get_user_by_id(follower_id) for follower_id in user.followers]
+
 
 async def get_following(user_id: str) -> List[User]:
     """
@@ -85,6 +105,7 @@ async def get_following(user_id: str) -> List[User]:
     user = await get_user_by_id(user_id)
     return [await get_user_by_id(following_id) for following_id in user.following]
 
+
 async def get_user_stories(story_ids: List[str]) -> List[Story]:
     """
     Retrieve a list of stories based on the provided story IDs.
@@ -96,4 +117,3 @@ async def get_user_stories(story_ids: List[str]) -> List[Story]:
         List[Story]: A list of story objects.
     """
     return [await get_story_by_id(story_id) for story_id in story_ids]
-
