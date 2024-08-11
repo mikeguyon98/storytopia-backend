@@ -38,8 +38,8 @@ class Story(BaseModel):
     private: bool
     createdAt: str
     id: str
-    likes: int
-    saves: int
+    likes: List[str]
+    saves: List[str]
 
 
 class StoryPost(BaseModel):
