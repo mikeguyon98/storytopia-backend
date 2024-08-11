@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
+from typing import List
+from fastapi import APIRouter, Depends, HTTPException, Query
 from storytopia_backend.api.middleware.auth import get_current_user
 from storytopia_backend.api.components.user.model import User
 from .repository import get_all_stories
 from .model import StoryPost, Story
-from .services import create_user_story, get_story, generate_story_with_images
+from .services import create_user_story, get_story, generate_story_with_images, get_recent_public_stories
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -41,3 +42,20 @@ async def generate_story_with_images_endpoint(
     Generate a story based on the given prompt, create images, and return a complete Story object.
     """
     return await generate_story_with_images(prompt, style, private, current_user)
+
+@router.get("/explore", response_model=List[Story])
+async def get_explore_stories(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1),
+) -> List[Story]:
+    """
+    Endpoint to retrieve the most recently created public stories for the explore page.
+
+    Parameters:
+        page (int): The page number for pagination (default: 1).
+        page_size (int): The number of stories per page (default: 10).
+
+    Returns:
+        List[Story]: A paginated list of the most recent public stories.
+    """
+    return await get_recent_public_stories(page, page_size)
