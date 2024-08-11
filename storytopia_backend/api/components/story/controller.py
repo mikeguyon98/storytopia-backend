@@ -1,10 +1,21 @@
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from storytopia_backend.api.middleware.auth import get_current_user
 from storytopia_backend.api.components.user.model import User
 from .repository import get_all_stories
+from datetime import datetime, timezone
 from .model import StoryPost, Story, GenerateStoryRequest
-from .services import create_user_story, get_story, generate_story_with_images, get_recent_public_stories, like_story, save_story, unlike_story, unsave_story
+from .services import (
+    create_user_story,
+    get_story,
+    create_story,
+    get_recent_public_stories,
+    like_story,
+    save_story,
+    unlike_story,
+    unsave_story,
+    generate_story_with_images_background,
+)
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -35,7 +46,9 @@ async def get_story_by_id_endpoint(
 
 
 @router.post("/like")
-async def like_story_endpoint(story_id: str, current_user: User = Depends(get_current_user)):
+async def like_story_endpoint(
+    story_id: str, current_user: User = Depends(get_current_user)
+):
     """
     Endpoint to like a story.
 
@@ -49,8 +62,11 @@ async def like_story_endpoint(story_id: str, current_user: User = Depends(get_cu
     await like_story(story_id, current_user.id)
     return {"message": "Story liked successfully"}
 
+
 @router.post("/unlike")
-async def unlike_story_endpoint(story_id: str, current_user: User = Depends(get_current_user)):
+async def unlike_story_endpoint(
+    story_id: str, current_user: User = Depends(get_current_user)
+):
     """
     Endpoint to unlike a story.
 
@@ -66,7 +82,9 @@ async def unlike_story_endpoint(story_id: str, current_user: User = Depends(get_
 
 
 @router.post("/save")
-async def save_story_endpoint(story_id: str, current_user: User = Depends(get_current_user)):
+async def save_story_endpoint(
+    story_id: str, current_user: User = Depends(get_current_user)
+):
     """
     Endpoint to save a story.
 
@@ -80,8 +98,11 @@ async def save_story_endpoint(story_id: str, current_user: User = Depends(get_cu
     await save_story(story_id, current_user.id)
     return {"message": "Story saved successfully"}
 
+
 @router.post("/unsave")
-async def unsave_story_endpoint(story_id: str, current_user: User = Depends(get_current_user)):
+async def unsave_story_endpoint(
+    story_id: str, current_user: User = Depends(get_current_user)
+):
     """
     Endpoint to unsave a story.
 
@@ -98,12 +119,45 @@ async def unsave_story_endpoint(story_id: str, current_user: User = Depends(get_
 
 @router.post("/generate-story-with-images")
 async def generate_story_with_images_endpoint(
-    request: GenerateStoryRequest, current_user: User = Depends(get_current_user)
+    request: GenerateStoryRequest,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
 ) -> Story:
     """
-    Generate a story based on the given prompt, create images, and return a complete Story object.
+    Generate a story based on the given prompt, create images, and return a Story object.
     """
-    return await generate_story_with_images(request.prompt, request.style, request.private, current_user)
+    # Create an initial Story object with a "pending" status
+    initial_story = Story(
+        title="Story being generated...",
+        author=current_user.username,
+        author_id=current_user.id,
+        description=request.prompt,
+        story_pages=[],
+        story_images=[],
+        private=request.private,
+        createdAt=datetime.now(timezone.utc).isoformat(),
+        id="",
+        likes=[],
+        saves=[],
+        status="pending",
+    )
+
+    # Save the initial story to the database and get its ID
+    story_id = await create_story(initial_story.model_dump())
+    initial_story.id = story_id
+
+    # Add the story generation task to the background tasks
+    background_tasks.add_task(
+        generate_story_with_images_background,
+        story_id,
+        request.prompt,
+        request.style,
+        request.private,
+        current_user,
+    )
+
+    return initial_story
+
 
 @router.get("/explore", response_model=List[Story])
 async def get_explore_stories(

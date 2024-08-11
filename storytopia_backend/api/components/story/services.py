@@ -2,10 +2,18 @@ from typing import List
 from .model import StoryPost, Story
 from storytopia_backend.api.components.user.model import User
 from datetime import datetime, timezone
-from .repository import create_story, get_story_by_id, get_recent_public_stories_from_db, update_story
+from .repository import (
+    create_story,
+    get_story_by_id,
+    get_recent_public_stories_from_db,
+    update_story,
+)
 from storytopia_backend.services.llm import StoryGenerationService
 from storytopia_backend.services.stable_diffusion import ImageGenerationService
-from storytopia_backend.api.components.user.repository import update_user, get_user_by_id
+from storytopia_backend.api.components.user.repository import (
+    update_user,
+    get_user_by_id,
+)
 from google.cloud import storage
 from storytopia_backend.api.components.story import image_service, story_service
 import json
@@ -43,7 +51,10 @@ async def get_story(story_id: str, user_id: str) -> Story:
 
 
 async def generate_story_with_images(
-    prompt: str, style: str, private: bool, current_user: User,
+    prompt: str,
+    style: str,
+    private: bool,
+    current_user: User,
 ) -> Story:
     """
     Generate a story based on the given prompt, create images, and return a complete Story object.
@@ -83,6 +94,7 @@ async def generate_story_with_images(
 
     return story
 
+
 async def get_recent_public_stories(page: int, page_size: int) -> List[Story]:
     """
     Retrieve the most recently created public stories for the explore page.
@@ -97,6 +109,7 @@ async def get_recent_public_stories(page: int, page_size: int) -> List[Story]:
     skip = (page - 1) * page_size
     return await get_recent_public_stories_from_db(skip, page_size)
 
+
 async def like_story(story_id: str, user_id: str) -> None:
     """
     Like a story and update the user's liked_books array.
@@ -110,12 +123,13 @@ async def like_story(story_id: str, user_id: str) -> None:
     """
     story = await get_story_by_id(story_id)
     user = await get_user_by_id(user_id)
-    
+
     if user_id not in story.likes:
         story.likes.append(user_id)
         user.liked_books.append(story_id)
         await update_story(story)
         await update_user(user)
+
 
 async def unlike_story(story_id: str, user_id: str) -> None:
     """
@@ -130,12 +144,13 @@ async def unlike_story(story_id: str, user_id: str) -> None:
     """
     story = await get_story_by_id(story_id)
     user = await get_user_by_id(user_id)
-    
+
     if user_id in story.likes:
         story.likes.remove(user_id)
         user.liked_books.remove(story_id)
         await update_story(story)
         await update_user(user)
+
 
 async def save_story(story_id: str, user_id: str) -> None:
     """
@@ -150,12 +165,13 @@ async def save_story(story_id: str, user_id: str) -> None:
     """
     story = await get_story_by_id(story_id)
     user = await get_user_by_id(user_id)
-    
+
     if user_id not in story.saves:
         story.saves.append(user_id)
         user.saved_books.append(story_id)
         await update_story(story)
         await update_user(user)
+
 
 async def unsave_story(story_id: str, user_id: str) -> None:
     """
@@ -170,9 +186,58 @@ async def unsave_story(story_id: str, user_id: str) -> None:
     """
     story = await get_story_by_id(story_id)
     user = await get_user_by_id(user_id)
-    
+
     if user_id in story.saves:
         story.saves.remove(user_id)
         user.saved_books.remove(story_id)
         await update_story(story)
         await update_user(user)
+
+
+async def generate_story_with_images_background(
+    story_id: str,
+    prompt: str,
+    style: str,
+    private: bool,
+    current_user: User,
+) -> None:
+    """
+    Generate a story and images in the background, updating the story object as it progresses.
+    """
+    try:
+        # Update story status to "generating_story"
+        story = await get_story_by_id(story_id)
+        story.status = "generating_story"
+        await update_story(story)
+
+        # Generate story
+        story_json = await story_service.generate_story(prompt)
+        story_data = json.loads(story_json)
+
+        # Update story with generated content
+        story.title = story_data["Title"]
+        story.story_pages = story_data["Summaries"]
+        story.status = "generating_images"
+        await update_story(story)
+
+        # Generate images based on the detailed scene descriptions
+        image_urls = await image_service.generate_images(story_data["Scenes"], style)
+
+        # Update story with generated images
+        story.story_images = image_urls
+        story.status = "completed"
+        await update_story(story)
+
+        # Update user's books
+        if private:
+            current_user.private_books.append(story_id)
+        else:
+            current_user.public_books.append(story_id)
+        await update_user(current_user)
+
+    except Exception as e:
+        # If an error occurs, update the story status to "error"
+        story = await get_story_by_id(story_id)
+        story.status = "error"
+        story.description += f" Error: {str(e)}"
+        await update_story(story)
