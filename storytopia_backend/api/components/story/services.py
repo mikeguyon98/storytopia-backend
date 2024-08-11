@@ -8,18 +8,16 @@ from .repository import (
     get_recent_public_stories_from_db,
     update_story,
 )
-
 from storytopia_backend.services.llm import StoryGenerationService
 from storytopia_backend.services.stable_diffusion import ImageGenerationService
 from storytopia_backend.api.components.user.repository import (
     update_user,
     get_user_by_id,
 )
-from storytopia_backend.firebase_config import db
+from google.cloud import storage
 from storytopia_backend.api.components.story import image_service, story_service
 import json
 from dotenv import load_dotenv
-
 
 load_dotenv()
 
@@ -194,75 +192,3 @@ async def unsave_story(story_id: str, user_id: str) -> None:
         user.saved_books.remove(story_id)
         await update_story(story)
         await update_user(user)
-
-
-async def generate_story_with_images_background(
-    story_id: str,
-    prompt: str,
-    style: str,
-    private: bool,
-    current_user: User,
-) -> None:
-    """
-    Generate a story and images in the background, updating the story object as it progresses.
-    """
-    try:
-        # Retrieve the story
-        story = await get_story_by_id(story_id)
-
-        # Generate story
-        story_json = await story_service.generate_story(prompt)
-        story_data = json.loads(story_json)
-
-        # Update story with generated content
-        story.title = story_data["Title"]
-        story.story_pages = story_data["Summaries"]
-        story.description = f"Generating images for: {prompt}"
-        await update_story(story)
-
-        # Generate images based on the detailed scene descriptions
-        image_urls = await image_service.generate_images(story_data["Scenes"], style)
-
-        # Update story with generated images
-        story.story_images = image_urls
-        story.description = prompt  # Set back to original prompt
-        await update_story(story)
-
-        # Update user's books
-        if private:
-            current_user.private_books.append(story_id)
-        else:
-            current_user.public_books.append(story_id)
-        await update_user(current_user)
-
-        # Send email notification
-        await send_story_completion_email(current_user.email, story.title, story.id)
-
-    except Exception as e:
-        # If an error occurs, update the story description
-        story = await get_story_by_id(story_id)
-        story.description += f" Error: {str(e)}"
-        await update_story(story)
-
-
-async def send_story_completion_email(user_email: str, story_title: str, story_id: str):
-    """
-    Send an email notification about story completion using Firebase Email Trigger extension.
-    """
-    mail_ref = db.collection("mail")
-    await mail_ref.add(
-        {
-            "to": user_email,
-            "message": {
-                "subject": f'Your story "{story_title}" is ready!',
-                "html": f"""
-                <h1>Your story is complete!</h1>
-                <p>Great news! Your story "{story_title}" has been generated and is ready for you to explore.</p>
-                <p>You can view your story by clicking on the link below:</p>
-                <a href="https://yourdomain.com/stories/{story_id}">View Your Story</a>
-                <p>We hope you enjoy your newly created story!</p>
-                <p>Best regards,<br>The Storytopia Team</p>
-            """,
-            },
-        }
-    )

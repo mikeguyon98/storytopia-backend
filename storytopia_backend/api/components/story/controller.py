@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from storytopia_backend.api.middleware.auth import get_current_user
 from storytopia_backend.api.components.user.model import User
 from .repository import get_all_stories
-from .model import StoryPost, Story
+from .model import StoryPost, Story, GenerateStoryRequest
 from .services import (
     create_user_story,
     get_story,
@@ -117,15 +117,14 @@ async def unsave_story_endpoint(
 
 @router.post("/generate-story-with-images")
 async def generate_story_with_images_endpoint(
-    prompt: str,
-    style: str,
-    private: bool,
-    current_user: User = Depends(get_current_user),
+    request: GenerateStoryRequest, current_user: User = Depends(get_current_user)
 ) -> Story:
     """
     Generate a story based on the given prompt, create images, and return a complete Story object.
     """
-    return await generate_story_with_images(prompt, style, private, current_user)
+    return await generate_story_with_images(
+        request.prompt, request.style, request.private, current_user
+    )
 
 
 @router.get("/explore", response_model=List[Story])
