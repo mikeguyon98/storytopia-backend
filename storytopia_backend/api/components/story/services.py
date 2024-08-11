@@ -32,8 +32,8 @@ async def create_user_story(story_post: StoryPost, current_user: User) -> Story:
         "private": story_post.private,
         "story_pages": [],
         "story_images": [],
-        "likes": 0,
-        "saves": 0,
+        "likes": [],
+        "saves": [],
         "id": "",
     }
     story_id = await create_story(story_data)
