@@ -2,7 +2,6 @@ from typing import List
 from storytopia_backend.firebase_config import db
 from .model import Story
 
-
 def get_all_stories():
     """
     Get all stories.
@@ -48,3 +47,16 @@ async def get_recent_public_stories_from_db(skip: int, limit: int) -> List[Story
     story_docs = query.stream()
     stories = [Story(**doc.to_dict()) for doc in story_docs]
     return stories
+
+async def update_story(story: Story) -> None:
+    """
+    Update a story's information in the database.
+
+    Parameters:
+        story (Story): The story object containing updated information.
+
+    Returns:
+        None
+    """
+    story_ref = db.collection('stories').document(story.id)
+    story_ref.set(story.dict())

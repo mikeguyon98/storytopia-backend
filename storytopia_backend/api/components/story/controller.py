@@ -4,7 +4,7 @@ from storytopia_backend.api.middleware.auth import get_current_user
 from storytopia_backend.api.components.user.model import User
 from .repository import get_all_stories
 from .model import StoryPost, Story
-from .services import create_user_story, get_story, generate_story_with_images, get_recent_public_stories
+from .services import create_user_story, get_story, generate_story_with_images, get_recent_public_stories, like_story, save_story
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -32,6 +32,38 @@ async def get_story_by_id_endpoint(
     story_id: str, current_user: User = Depends(get_current_user)
 ):
     return await get_story(story_id, current_user.id)
+
+
+@router.post("/stories/like")
+async def like_story_endpoint(story_id: str, current_user: User = Depends(get_current_user)):
+    """
+    Endpoint to like a story.
+
+    Parameters:
+        story_id (str): The ID of the story to like.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        dict: A message indicating the like action was successful.
+    """
+    await like_story(story_id, current_user.id)
+    return {"message": "Story liked successfully"}
+
+
+@router.post("/stories/save")
+async def save_story_endpoint(story_id: str, current_user: User = Depends(get_current_user)):
+    """
+    Endpoint to save a story.
+
+    Parameters:
+        story_id (str): The ID of the story to save.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        dict: A message indicating the save action was successful.
+    """
+    await save_story(story_id, current_user.id)
+    return {"message": "Story saved successfully"}
 
 
 @router.post("/generate-story-with-images")

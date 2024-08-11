@@ -2,10 +2,10 @@ from typing import List
 from .model import StoryPost, Story
 from storytopia_backend.api.components.user.model import User
 from datetime import datetime, timezone
-from .repository import create_story, get_story_by_id, get_recent_public_stories_from_db
+from .repository import create_story, get_story_by_id, get_recent_public_stories_from_db, update_story
 from storytopia_backend.services.llm import StoryGenerationService
 from storytopia_backend.services.stable_diffusion import ImageGenerationService
-from storytopia_backend.api.components.user.repository import update_user
+from storytopia_backend.api.components.user.repository import update_user, get_user_by_id
 from google.cloud import storage
 from storytopia_backend.api.components.story import image_service, story_service
 import json
@@ -97,3 +97,42 @@ async def get_recent_public_stories(page: int, page_size: int) -> List[Story]:
     skip = (page - 1) * page_size
     return await get_recent_public_stories_from_db(skip, page_size)
 
+async def like_story(story_id: str, user_id: str) -> None:
+    """
+    Like a story and update the user's liked_books array.
+
+    Parameters:
+        story_id (str): The ID of the story to like.
+        user_id (str): The ID of the user liking the story.
+
+    Returns:
+        None
+    """
+    story = await get_story_by_id(story_id)
+    user = await get_user_by_id(user_id)
+    
+    if user_id not in story.likes:
+        story.likes.append(user_id)
+        user.liked_books.append(story_id)
+        await update_story(story)
+        await update_user(user)
+
+async def save_story(story_id: str, user_id: str) -> None:
+    """
+    Save a story and update the user's saved_books array.
+
+    Parameters:
+        story_id (str): The ID of the story to save.
+        user_id (str): The ID of the user saving the story.
+
+    Returns:
+        None
+    """
+    story = await get_story_by_id(story_id)
+    user = await get_user_by_id(user_id)
+    
+    if user_id not in story.saves:
+        story.saves.append(user_id)
+        user.saved_books.append(story_id)
+        await update_story(story)
+        await update_user(user)
