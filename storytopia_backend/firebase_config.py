@@ -6,7 +6,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-cred = credentials.Certificate("./storytopia_backend/repurpose-ai-firebase-adminsdk-kf6c0-cd0dd6cdfd.json")
-firebase_admin.initialize_app(cred)
+cred_json = os.getenv("FIREBASE_CREDENTIALS")
+if cred_json:
+    cred_dict = json.loads(cred_json)
+    cred = credentials.Certificate(cred_dict)
+    firebase_admin.initialize_app(cred)
+else:
+    raise ValueError("FIREBASE_CREDENTIALS environment variable not set")
 
 db = firestore.client()
