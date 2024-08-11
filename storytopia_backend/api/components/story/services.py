@@ -117,6 +117,26 @@ async def like_story(story_id: str, user_id: str) -> None:
         await update_story(story)
         await update_user(user)
 
+async def unlike_story(story_id: str, user_id: str) -> None:
+    """
+    Unlike a story and update the user's liked_books array.
+
+    Parameters:
+        story_id (str): The ID of the story to unlike.
+        user_id (str): The ID of the user unliking the story.
+
+    Returns:
+        None
+    """
+    story = await get_story_by_id(story_id)
+    user = await get_user_by_id(user_id)
+    
+    if user_id in story.likes:
+        story.likes.remove(user_id)
+        user.liked_books.remove(story_id)
+        await update_story(story)
+        await update_user(user)
+
 async def save_story(story_id: str, user_id: str) -> None:
     """
     Save a story and update the user's saved_books array.
@@ -134,5 +154,25 @@ async def save_story(story_id: str, user_id: str) -> None:
     if user_id not in story.saves:
         story.saves.append(user_id)
         user.saved_books.append(story_id)
+        await update_story(story)
+        await update_user(user)
+
+async def unsave_story(story_id: str, user_id: str) -> None:
+    """
+    Unsave a story and update the user's saved_books array.
+
+    Parameters:
+        story_id (str): The ID of the story to unsave.
+        user_id (str): The ID of the user unsaving the story.
+
+    Returns:
+        None
+    """
+    story = await get_story_by_id(story_id)
+    user = await get_user_by_id(user_id)
+    
+    if user_id in story.saves:
+        story.saves.remove(user_id)
+        user.saved_books.remove(story_id)
         await update_story(story)
         await update_user(user)
