@@ -66,9 +66,9 @@ async def update_user_endpoint(
     return await update_user_details(current_user.id, user_update)
 
 
-@router.post("/follow/{user_id}", response_model=None)
+@router.post("/follow/{username}", response_model=None)
 async def follow_user_endpoint(
-    user_id: str, current_user: User = Depends(get_current_user)
+    username: str, current_user: User = Depends(get_current_user)
 ):
     """
     Endpoint to follow a user.
@@ -80,25 +80,25 @@ async def follow_user_endpoint(
     Returns:
         dict: A message indicating the follow action was successful.
     """
-    await follow_user(current_user.id, user_id)
+    await follow_user(current_user.id, username)
     return {"message": "Followed user successfully"}
 
 
-@router.post("/unfollow/{user_id}", response_model=dict)
+@router.post("/unfollow/{username}", response_model=dict)
 async def unfollow_user_endpoint(
-    user_id: str, current_user: User = Depends(get_current_user)
+    username: str, current_user: User = Depends(get_current_user)
 ):
     """
     Endpoint to unfollow a user.
 
     Parameters:
-        user_id (str): The ID of the user to unfollow.
+        username (str): The name of the user to unfollow.
         current_user (User): The current authenticated user.
 
     Returns:
         dict: A message indicating the unfollow action was successful.
     """
-    await unfollow_user(current_user.id, user_id)
+    await unfollow_user(current_user.id, username)
     return {"message": "Unfollowed user successfully"}
 
 
@@ -143,6 +143,7 @@ async def get_public_posts(
     Returns:
         List[Story]: A list of public stories created by the user.
     """
+    print(current_user)
     return await get_user_stories(current_user.public_books)
 
 
