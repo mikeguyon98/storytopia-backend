@@ -8,6 +8,7 @@ from .repository import (
     get_recent_public_stories_from_db,
     update_story,
     send_story_generation_email,
+    send_story_generation_failure_email,
 )
 from storytopia_backend.services.llm import StoryGenerationService
 from storytopia_backend.services.stable_diffusion import ImageGenerationService
@@ -39,7 +40,7 @@ async def save_speech_to_storage(audio_content: bytes) -> str:
     client = storage.Client()
     bucket = client.bucket(GCS_BUCKET_NAME)
 
-    folder = 'storytopia_audio_dev'
+    folder = "storytopia_audio_dev"
 
     # Create a unique file name for each audio file
     file_name = f"{folder}/{uuid.uuid4()}.mp3"
@@ -48,7 +49,7 @@ async def save_speech_to_storage(audio_content: bytes) -> str:
     blob = bucket.blob(file_name)
 
     # Upload the audio content to the blob
-    blob.upload_from_string(audio_content, content_type='audio/mpeg')
+    blob.upload_from_string(audio_content, content_type="audio/mpeg")
 
     # Make the blob publicly accessible (optional)
     blob.make_public()
@@ -64,10 +65,12 @@ async def generate_speech_for_page(text: str) -> str:
         language_code="en-US", ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
     )
     audio_config = texttospeech.AudioConfig(
-        audio_encoding=texttospeech.AudioEncoding.MP3)
+        audio_encoding=texttospeech.AudioEncoding.MP3
+    )
 
     response = client.synthesize_speech(
-        input=synthesis_input, voice=voice, audio_config=audio_config)
+        input=synthesis_input, voice=voice, audio_config=audio_config
+    )
 
     # Save the audio content and return the public URL
     return await save_speech_to_storage(response.audio_content)
@@ -78,14 +81,18 @@ async def generate_audio_files(story: Story):
         print(f"Audio files already exist for story ID: {story.id}")
         return
     try:
-        urls = await asyncio.gather(*[generate_speech_for_page(page) for page in story.story_pages])
+        urls = await asyncio.gather(
+            *[generate_speech_for_page(page) for page in story.story_pages]
+        )
         story.audio_files = urls
         await update_story(story)
     except Exception as e:
         print(f"Error generating audio files: {e}")
 
 
-async def create_user_story(story_post: StoryPost, current_user: User, background_tasks: BackgroundTasks) -> Story:
+async def create_user_story(
+    story_post: StoryPost, current_user: User, background_tasks: BackgroundTasks
+) -> Story:
     story_data = {
         "audio_files": [],
         "title": story_post.title,
@@ -127,44 +134,53 @@ async def generate_story_with_images(
     """
     Generate a story based on the given prompt, create images, and return a complete Story object.
     """
-    # Generate story
-    story_json = await story_service.generate_story(prompt)
-    story_data = json.loads(story_json)
+    try:
+        # Generate story
+        story_json = await story_service.generate_story(prompt)
+        story_data = json.loads(story_json)
 
-    # Generate images based on the detailed scene descriptions
-    image_urls = await image_service.generate_images(story_data["Scenes"], style)
+        # Generate images based on the detailed scene descriptions
+        image_urls = await image_service.generate_images(story_data["Scenes"], style)
 
-    # Create a Story object
-    story = Story(
-        title=story_data["Title"],
-        author=current_user.username,
-        author_id=current_user.id,
-        description=story_data["Prompt"],
-        story_pages=story_data["Summaries"],
-        story_images=image_urls,
-        private=private,
-        createdAt=datetime.now(timezone.utc).isoformat(),
-        id="",
-        likes=[],
-        saves=[],
-        audio_files=[],
-    )
+        # Create a Story object
+        story = Story(
+            title=story_data["Title"],
+            author=current_user.username,
+            author_id=current_user.id,
+            description=story_data["Prompt"],
+            story_pages=story_data["Summaries"],
+            story_images=image_urls,
+            private=private,
+            createdAt=datetime.now(timezone.utc).isoformat(),
+            id="",
+            likes=[],
+            saves=[],
+            audio_files=[],
+        )
 
-    # Save the story to the database
-    story_id = await create_story(story.model_dump())
-    story.id = story_id
+        # Save the story to the database
+        story_id = await create_story(story.model_dump())
+        story.id = story_id
 
-    if private:
-        current_user.private_books.append(story_id)
-    else:
-        current_user.public_books.append(story_id)
+        if private:
+            current_user.private_books.append(story_id)
+        else:
+            current_user.public_books.append(story_id)
 
-    await update_user(current_user)
+        await update_user(current_user)
 
-    # Send email notification
-    await send_story_generation_email(current_user.id, story.description)
+        # Send email notification
+        await send_story_generation_email(current_user.id, story.description)
 
-    return story
+        return story
+
+    except Exception as e:
+        error_message = str(e)
+        print(f"Error generating story: {error_message}")
+        await send_story_generation_failure_email(
+            current_user.id, prompt, error_message
+        )
+        return None
 
 
 async def get_recent_public_stories(page: int, page_size: int) -> List[Story]:
