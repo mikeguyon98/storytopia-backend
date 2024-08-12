@@ -21,6 +21,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from storytopia_backend.api.middleware.auth import get_current_user
 from .services import (
     follow_user,
+    unfollow_user,
     get_followers,
     get_following,
     update_user_details,
@@ -80,6 +81,24 @@ async def follow_user_endpoint(
     """
     await follow_user(current_user.id, user_id)
     return {"message": "Followed user successfully"}
+
+
+@router.post("/unfollow/{user_id}", response_model=dict)
+async def unfollow_user_endpoint(
+    user_id: str, current_user: User = Depends(get_current_user)
+):
+    """
+    Endpoint to unfollow a user.
+
+    Parameters:
+        user_id (str): The ID of the user to unfollow.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        dict: A message indicating the unfollow action was successful.
+    """
+    await unfollow_user(current_user.id, user_id)
+    return {"message": "Unfollowed user successfully"}
 
 
 @router.get("/followers", response_model=List[User])

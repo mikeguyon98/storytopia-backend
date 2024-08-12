@@ -143,3 +143,29 @@ async def get_public_user_info(username: str) -> dict:
         "bio": user.bio,
         "public_books": user.public_books,
     }
+
+
+async def unfollow_user(current_user_id: str, unfollow_user_id: str) -> None:
+    """
+    Unfollow a user.
+
+    Parameters:
+        current_user_id (str): The ID of the current user.
+        unfollow_user_id (str): The ID of the user to unfollow.
+
+    Returns:
+        None
+    """
+    current_user = await get_user_by_id(current_user_id)
+    user_to_unfollow = await get_user_by_id(unfollow_user_id)
+
+    if not user_to_unfollow:
+        raise HTTPException(status_code=404, detail="User to unfollow not found")
+
+    if unfollow_user_id in current_user.following:
+        current_user.following.remove(unfollow_user_id)
+        user_to_unfollow.followers.remove(current_user_id)
+        await update_user(current_user)
+        await update_user(user_to_unfollow)
+    else:
+        raise HTTPException(status_code=400, detail="You are not following this user")
