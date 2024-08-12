@@ -59,3 +59,21 @@ async def check_username_exists(username: str) -> bool:
     query = users_ref.where("username", "==", username).limit(1)
     docs = query.get()
     return len(docs) > 0
+
+
+async def get_user_by_username(username: str) -> User:
+    """
+    Retrieve a user by their username.
+
+    Parameters:
+    username (str): The username of the user to retrieve.
+
+    Returns:
+    User: The user object if found, otherwise None.
+    """
+    users_ref = db.collection("users")
+    query = users_ref.where("username", "==", username).limit(1)
+    docs = query.get()
+    if docs:
+        return User(**docs[0].to_dict())
+    return None

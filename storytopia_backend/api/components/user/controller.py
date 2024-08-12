@@ -15,32 +15,43 @@ Functions:
     get_followers_endpoint: Get the list of followers for the current user.
     get_following_endpoint: Get the list of users the current user is following.
 """
+
 from typing import List
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from storytopia_backend.api.middleware.auth import get_current_user
 from .services import (
-    follow_user, get_followers, get_following, update_user_details, get_user_stories
+    follow_user,
+    unfollow_user,
+    get_followers,
+    get_following,
+    update_user_details,
+    get_user_stories,
+    get_public_user_info,
 )
 from .model import User, UserUpdate
 from storytopia_backend.api.components.story.model import Story
 
 router = APIRouter()
 
+
 @router.get("/me", response_model=User)
 async def read_user(current_user: User = Depends(get_current_user)) -> User:
     """
     Retrieve the current user.
-    
+
     Parameters:
         current_user (User): The current user object.
-    
+
     Returns:
         User: The current user.
     """
     return current_user
 
+
 @router.put("/me", response_model=User)
-async def update_user_endpoint(user_update: UserUpdate, current_user: User = Depends(get_current_user)) -> User:
+async def update_user_endpoint(
+    user_update: UserUpdate, current_user: User = Depends(get_current_user)
+) -> User:
     """
     Endpoint to update the current user's details.
 
@@ -53,8 +64,11 @@ async def update_user_endpoint(user_update: UserUpdate, current_user: User = Dep
     """
     return await update_user_details(current_user.id, user_update)
 
+
 @router.post("/follow/{user_id}", response_model=None)
-async def follow_user_endpoint(user_id: str, current_user: User = Depends(get_current_user)):
+async def follow_user_endpoint(
+    user_id: str, current_user: User = Depends(get_current_user)
+):
     """
     Endpoint to follow a user.
 
@@ -68,6 +82,25 @@ async def follow_user_endpoint(user_id: str, current_user: User = Depends(get_cu
     await follow_user(current_user.id, user_id)
     return {"message": "Followed user successfully"}
 
+
+@router.post("/unfollow/{user_id}", response_model=dict)
+async def unfollow_user_endpoint(
+    user_id: str, current_user: User = Depends(get_current_user)
+):
+    """
+    Endpoint to unfollow a user.
+
+    Parameters:
+        user_id (str): The ID of the user to unfollow.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        dict: A message indicating the unfollow action was successful.
+    """
+    await unfollow_user(current_user.id, user_id)
+    return {"message": "Unfollowed user successfully"}
+
+
 @router.get("/followers", response_model=List[User])
 async def get_followers_endpoint(current_user: User = Depends(get_current_user)):
     """
@@ -80,6 +113,7 @@ async def get_followers_endpoint(current_user: User = Depends(get_current_user))
         List[User]: A list of users who follow the current user.
     """
     return await get_followers(current_user.id)
+
 
 @router.get("/following", response_model=List[User])
 async def get_following_endpoint(current_user: User = Depends(get_current_user)):
@@ -96,7 +130,9 @@ async def get_following_endpoint(current_user: User = Depends(get_current_user))
 
 
 @router.get("/me/public_posts", response_model=List[Story])
-async def get_public_posts(current_user: User = Depends(get_current_user)) -> List[Story]:
+async def get_public_posts(
+    current_user: User = Depends(get_current_user),
+) -> List[Story]:
     """
     Endpoint to retrieve the current user's public posts.
 
@@ -108,8 +144,11 @@ async def get_public_posts(current_user: User = Depends(get_current_user)) -> Li
     """
     return await get_user_stories(current_user.public_books)
 
+
 @router.get("/me/private_posts", response_model=List[Story])
-async def get_private_posts(current_user: User = Depends(get_current_user)) -> List[Story]:
+async def get_private_posts(
+    current_user: User = Depends(get_current_user),
+) -> List[Story]:
     """
     Endpoint to retrieve the current user's private posts.
 
@@ -121,8 +160,11 @@ async def get_private_posts(current_user: User = Depends(get_current_user)) -> L
     """
     return await get_user_stories(current_user.private_books)
 
+
 @router.get("/me/saved_posts", response_model=List[Story])
-async def get_saved_posts(current_user: User = Depends(get_current_user)) -> List[Story]:
+async def get_saved_posts(
+    current_user: User = Depends(get_current_user),
+) -> List[Story]:
     """
     Endpoint to retrieve the current user's saved posts.
 
@@ -134,8 +176,11 @@ async def get_saved_posts(current_user: User = Depends(get_current_user)) -> Lis
     """
     return await get_user_stories(current_user.saved_books)
 
+
 @router.get("/me/liked_posts", response_model=List[Story])
-async def get_liked_posts(current_user: User = Depends(get_current_user)) -> List[Story]:
+async def get_liked_posts(
+    current_user: User = Depends(get_current_user),
+) -> List[Story]:
     """
     Endpoint to retrieve the current user's liked posts.
 
@@ -146,3 +191,23 @@ async def get_liked_posts(current_user: User = Depends(get_current_user)) -> Lis
         List[Story]: A list of liked stories liked by the user.
     """
     return await get_user_stories(current_user.liked_books)
+
+
+@router.get("/username/{username}", response_model=dict)
+async def get_public_info_by_username(
+    username: str, current_user: User = Depends(get_current_user)
+):
+    """
+    Endpoint to get public information for a user by username.
+
+    Parameters:
+        username (str): The username of the user to fetch.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        Dict: A dictionary containing public user information.
+    """
+    user_info = await get_public_user_info(username)
+    if not user_info:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user_info

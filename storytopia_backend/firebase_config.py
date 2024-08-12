@@ -1,16 +1,17 @@
+import os
+import json
 import firebase_admin
 from firebase_admin import credentials, firestore
-import json
+from dotenv import load_dotenv
 
-# Load credentials from JSON file
-with open("/Users/gregoryguyon/Documents/GitHub/storytopia-backend/storytopia_backend/repurpose-ai-firebase-adminsdk-kf6c0-cd0dd6cdfd.json", 'r') as file:
-    cred_dict = json.load(file)
+load_dotenv()
 
-# Initialize credentials
-cred = credentials.Certificate(cred_dict)
+cred_json = os.getenv("FIREBASE_CREDENTIALS")
+if cred_json:
+    cred_dict = json.loads(cred_json)
+    cred = credentials.Certificate(cred_dict)
+    firebase_admin.initialize_app(cred)
+else:
+    raise ValueError("FIREBASE_CREDENTIALS environment variable not set")
 
-# Initialize Firebase Admin using the credentials
-firebase_admin.initialize_app(cred)
-
-# Get the Firestore client
 db = firestore.client()
