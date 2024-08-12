@@ -123,6 +123,7 @@ async def generate_story_with_images(
     style: str,
     private: bool,
     current_user: User,
+    disability: str = None,
 ) -> Story:
     """
     Generate a story based on the given prompt, create images, and return a complete Story object.
@@ -160,6 +161,9 @@ async def generate_story_with_images(
         current_user.public_books.append(story_id)
 
     await update_user(current_user)
+    urls = await asyncio.gather(*[generate_speech_for_page(page) for page in story.story_pages])
+    story.audio_files = urls
+    await update_story(story)
 
     # Send email notification
     await send_story_generation_email(current_user.id, story.description)
