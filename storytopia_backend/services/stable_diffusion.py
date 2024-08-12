@@ -14,6 +14,24 @@ import random
 load_dotenv()
 
 
+class ImageGenerationError(Exception):
+    """Base class for image generation errors."""
+
+    pass
+
+
+class ImageUploadError(ImageGenerationError):
+    """Raised when there's an error uploading the image to storage."""
+
+    pass
+
+
+class MaxRetriesExceededError(ImageGenerationError):
+    """Raised when the maximum number of retries is exceeded."""
+
+    pass
+
+
 class ImageGenerationService:
     def __init__(
         self,
@@ -74,9 +92,14 @@ class ImageGenerationService:
                         # Add a small delay before retrying
                         await asyncio.sleep(random.uniform(1, 3))
                     else:
-                        print(f"Failed to generate image after {max_retries} attempts.")
-                        # You might want to add a placeholder image or handle this case as appropriate
-                        image_urls.append(None)
+                        error_msg = f"Failed to generate image after {max_retries} attempts for scene {index + 1}."
+                        print(error_msg)
+                        raise MaxRetriesExceededError(error_msg)
+
+        if len(image_urls) != len(scene_descriptions):
+            raise ImageGenerationError(
+                f"Generated {len(image_urls)} images, but expected {len(scene_descriptions)}."
+            )
 
         return image_urls
 

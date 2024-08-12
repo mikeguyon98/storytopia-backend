@@ -14,7 +14,7 @@ from .services import (
     toggle_story_privacy,
     unlike_story,
     unsave_story,
-    generate_speech_for_page
+    generate_speech_for_page,
 )
 from dotenv import load_dotenv
 import asyncio
@@ -58,7 +58,9 @@ async def get_story_tts(story_id: str, current_user: User = Depends(get_current_
         return {"audio_files": story.audio_files}
 
     try:
-        urls = await asyncio.gather(*[generate_speech_for_page(page) for page in story.story_pages])
+        urls = await asyncio.gather(
+            *[generate_speech_for_page(page) for page in story.story_pages]
+        )
         story.audio_files = urls
         await update_story(story)
         return {"audio_files": urls}
@@ -140,18 +142,25 @@ async def unsave_story_endpoint(
 
 @router.post("/generate-story-with-images")
 async def generate_story_with_images_endpoint(
-    request: GenerateStoryRequest, background_tasks: BackgroundTasks, current_user: User = Depends(get_current_user)
+    request: GenerateStoryRequest,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
 ) -> dict:
     """
     Generate a story based on the given prompt, create images, and return a complete Story object.
     """
+
     def run_generate_story_with_images():
         import asyncio
-        asyncio.run(generate_story_with_images(request.prompt, request.style, request.private, current_user))
+
+        asyncio.run(
+            generate_story_with_images(
+                request.prompt, request.style, request.private, current_user
+            )
+        )
 
     background_tasks.add_task(run_generate_story_with_images)
     return {"message": "Story generation started"}
-
 
 
 @router.get("/explore", response_model=List[Story])

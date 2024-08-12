@@ -118,3 +118,39 @@ async def send_story_generation_email(user_id: str, story_description: str):
         )
     else:
         print(f"Error: Unable to find email for user {user_id}")
+
+
+async def send_story_generation_failure_email(
+    user_id: str, prompt: str, error_message: str
+):
+    """
+    Send an email notification to the user about the failure in story generation.
+
+    Parameters:
+        user_id (str): The ID of the user who attempted to generate the story.
+        prompt (str): The prompt used for story generation.
+        error_message (str): The error message describing the failure.
+    """
+    user_email = await get_user_email_by_uid(user_id)
+    if user_email:
+        mail_ref = db.collection("mail").document()
+        mail_ref.set(
+            {
+                "to": user_email,
+                "message": {
+                    "subject": "Story Generation Failed",
+                    "html": f"""
+                    <h1>We Encountered an Issue</h1>
+                    <p>Hello,</p>
+                    <p>We're sorry to inform you that we encountered an error while generating your story based on the prompt:</p>
+                    <p><em>"{prompt}"</em></p>
+                    <p>Error details: {error_message}</p>
+                    <p>Please try again later or contact our support team if the issue persists.</p>
+                    <p>We apologize for any inconvenience.</p>
+                    <p>Best regards,<br>The Storytopia Team</p>
+                """,
+                },
+            }
+        )
+    else:
+        print(f"Error: Unable to find email for user {user_id}")
