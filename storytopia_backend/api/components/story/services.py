@@ -129,8 +129,9 @@ async def generate_story_with_images(
         private=private,  # May want to make this configurable
         createdAt=datetime.now(timezone.utc).isoformat(),
         id="",
-        likes=0,
-        saves=0,
+        likes=[],
+        saves=[],
+        audio_files=[],
     )
 
     # Save the story to the database
