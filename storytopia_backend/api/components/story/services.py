@@ -9,13 +9,72 @@ from storytopia_backend.api.components.user.repository import update_user, get_u
 from google.cloud import storage
 from storytopia_backend.api.components.story import image_service, story_service
 import json
+from google.cloud import texttospeech
+import asyncio
 from dotenv import load_dotenv
+import uuid
+from fastapi import BackgroundTasks
+import os
+
+GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME")
 
 load_dotenv()
 
 
-async def create_user_story(story_post: StoryPost, current_user: User) -> Story:
+async def save_speech_to_storage(audio_content: bytes) -> str:
+    # Initialize the Google Cloud Storage client
+    client = storage.Client()
+    bucket = client.bucket(GCS_BUCKET_NAME)
+
+    folder = 'storytopia_audio_dev'
+
+    # Create a unique file name for each audio file
+    file_name = f"{folder}/{uuid.uuid4()}.mp3"
+
+    # Create a blob (file) in the bucket
+    blob = bucket.blob(file_name)
+
+    # Upload the audio content to the blob
+    blob.upload_from_string(audio_content, content_type='audio/mpeg')
+
+    # Make the blob publicly accessible (optional)
+    blob.make_public()
+
+    # Return the public URL
+    return blob.public_url
+
+
+async def generate_speech_for_page(text: str) -> str:
+    client = texttospeech.TextToSpeechClient()
+    synthesis_input = texttospeech.SynthesisInput(text=text)
+    voice = texttospeech.VoiceSelectionParams(
+        language_code="en-US", ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
+    )
+    audio_config = texttospeech.AudioConfig(
+        audio_encoding=texttospeech.AudioEncoding.MP3)
+
+    response = client.synthesize_speech(
+        input=synthesis_input, voice=voice, audio_config=audio_config)
+
+    # Save the audio content and return the public URL
+    return await save_speech_to_storage(response.audio_content)
+
+
+async def generate_audio_files(story: Story):
+    if story.audio_files:
+        print(f"Audio files already exist for story ID: {story.id}")
+        return
+    try:
+        urls = await asyncio.gather(*[generate_speech_for_page(page) for page in story.story_pages])
+        story.audio_files = urls
+        await update_story(story)
+    except Exception as e:
+        print(f"Error generating audio files: {e}")
+
+
+async def create_user_story(story_post: StoryPost, current_user: User, background_tasks: BackgroundTasks) -> Story:
     story_data = {
+        "audio_files": [],
         "title": story_post.title,
         "description": story_post.description,
         "author": current_user.username,
@@ -30,7 +89,11 @@ async def create_user_story(story_post: StoryPost, current_user: User) -> Story:
     }
     story_id = await create_story(story_data)
     story_data["id"] = story_id
-    return Story(**story_data)
+    story = Story(**story_data)
+
+    background_tasks.add_task(generate_audio_files, story)
+
+    return story
 
 
 async def get_story(story_id: str, user_id: str) -> Story:
@@ -83,6 +146,7 @@ async def generate_story_with_images(
 
     return story
 
+
 async def get_recent_public_stories(page: int, page_size: int) -> List[Story]:
     """
     Retrieve the most recently created public stories for the explore page.
@@ -97,6 +161,7 @@ async def get_recent_public_stories(page: int, page_size: int) -> List[Story]:
     skip = (page - 1) * page_size
     return await get_recent_public_stories_from_db(skip, page_size)
 
+
 async def like_story(story_id: str, user_id: str) -> None:
     """
     Like a story and update the user's liked_books array.
@@ -110,12 +175,13 @@ async def like_story(story_id: str, user_id: str) -> None:
     """
     story = await get_story_by_id(story_id)
     user = await get_user_by_id(user_id)
-    
+
     if user_id not in story.likes:
         story.likes.append(user_id)
         user.liked_books.append(story_id)
         await update_story(story)
         await update_user(user)
+
 
 async def unlike_story(story_id: str, user_id: str) -> None:
     """
@@ -130,12 +196,13 @@ async def unlike_story(story_id: str, user_id: str) -> None:
     """
     story = await get_story_by_id(story_id)
     user = await get_user_by_id(user_id)
-    
+
     if user_id in story.likes:
         story.likes.remove(user_id)
         user.liked_books.remove(story_id)
         await update_story(story)
         await update_user(user)
+
 
 async def save_story(story_id: str, user_id: str) -> None:
     """
@@ -150,12 +217,13 @@ async def save_story(story_id: str, user_id: str) -> None:
     """
     story = await get_story_by_id(story_id)
     user = await get_user_by_id(user_id)
-    
+
     if user_id not in story.saves:
         story.saves.append(user_id)
         user.saved_books.append(story_id)
         await update_story(story)
         await update_user(user)
+
 
 async def unsave_story(story_id: str, user_id: str) -> None:
     """
@@ -170,7 +238,7 @@ async def unsave_story(story_id: str, user_id: str) -> None:
     """
     story = await get_story_by_id(story_id)
     user = await get_user_by_id(user_id)
-    
+
     if user_id in story.saves:
         story.saves.remove(user_id)
         user.saved_books.remove(story_id)

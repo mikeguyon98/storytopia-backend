@@ -81,6 +81,7 @@ pytest = "^8.3.2"
 pylint = "^3.2.6"
 twisted = "^24.3.0"
 aiohttp = "^3.10.3"
+google-cloud-texttospeech = "^2.16.5"
 
 
 [tool.poetry.group.dev.dependencies]
