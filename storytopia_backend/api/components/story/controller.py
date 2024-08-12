@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from storytopia_backend.api.middleware.auth import get_current_user
 from storytopia_backend.api.components.user.model import User
 from .repository import get_all_stories

@@ -7,6 +7,7 @@ from .repository import (
     get_story_by_id,
     get_recent_public_stories_from_db,
     update_story,
+    send_story_generation_email,
 )
 from storytopia_backend.services.llm import StoryGenerationService
 from storytopia_backend.services.stable_diffusion import ImageGenerationService
@@ -15,9 +16,13 @@ from storytopia_backend.api.components.user.repository import (
     get_user_by_id,
 )
 from google.cloud import storage
-from storytopia_backend.api.components.story import image_service, story_service
+from storytopia_backend.api.components.story import (
+    image_service,
+    story_service,
+)
 import json
 from dotenv import load_dotenv
+from storytopia_backend.firebase_config import db
 
 load_dotenv()
 
@@ -74,7 +79,7 @@ async def generate_story_with_images(
         description=story_data["Prompt"],
         story_pages=story_data["Summaries"],
         story_images=image_urls,
-        private=private,  # May want to make this configurable
+        private=private,
         createdAt=datetime.now(timezone.utc).isoformat(),
         id="",
         likes=[],
@@ -91,6 +96,9 @@ async def generate_story_with_images(
         current_user.public_books.append(story_id)
 
     await update_user(current_user)
+
+    # Send email notification
+    await send_story_generation_email(current_user.id, story.description)
 
     return story
 

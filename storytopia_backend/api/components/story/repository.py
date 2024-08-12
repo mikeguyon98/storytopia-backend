@@ -1,5 +1,6 @@
 from typing import List
 from storytopia_backend.firebase_config import db
+from firebase_admin import auth
 from .model import Story
 
 
@@ -66,3 +67,54 @@ async def update_story(story: Story) -> None:
     """
     story_ref = db.collection("stories").document(story.id)
     story_ref.set(story.model_dump())
+
+
+async def get_user_email_by_uid(uid: str) -> str:
+    """
+    Retrieve the user's email address using their UID from Firebase Auth.
+
+    Parameters:
+        uid (str): The unique identifier of the user.
+
+    Returns:
+        str: The email address of the user, or None if not found.
+    """
+    try:
+        user = auth.get_user(uid)
+        return user.email
+    except auth.AuthError:
+        print(f"Error: Unable to find user with UID {uid}")
+        return None
+
+
+async def send_story_generation_email(user_id: str, story_description: str):
+    """
+    Send an email notification to the user about their generated story.
+
+    Parameters:
+        user_id (str): The ID of the user who generated the story.
+        story_description (str): The description of the generated story.
+    """
+    user_email = await get_user_email_by_uid(user_id)
+    if user_email:
+        mail_ref = db.collection("mail").document()
+        mail_ref.set(
+            {
+                "to": user_email,
+                "message": {
+                    "subject": "Your Story has been Generated!",
+                    "html": f"""
+                    <h1>Your Story is Ready!</h1>
+                    <p>Hello,</p>
+                    <p>We're excited to inform you that your story based on the prompt:</p>
+                    <p><em>"{story_description}"</em></p>
+                    <p>has been successfully generated.</p>
+                    <p>Log in to your account to view and share your new creation!</p>
+                    <p>Happy storytelling!</p>
+                    <p>Best regards,<br>The Storytopia Team</p>
+                """,
+                },
+            }
+        )
+    else:
+        print(f"Error: Unable to find email for user {user_id}")
