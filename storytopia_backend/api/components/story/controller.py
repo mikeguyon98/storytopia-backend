@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from storytopia_backend.api.middleware.auth import get_current_user
 from storytopia_backend.api.components.user.model import User
 from .repository import get_all_stories
@@ -11,6 +11,7 @@ from .services import (
     get_recent_public_stories,
     like_story,
     save_story,
+    toggle_story_privacy,
     unlike_story,
     unsave_story,
 )
@@ -143,3 +144,14 @@ async def get_explore_stories(
         List[Story]: A paginated list of the most recent public stories.
     """
     return await get_recent_public_stories(page, page_size)
+
+
+@router.post("/story/{story_id}/toggle-privacy", response_model=Story)
+async def toggle_privacy(story_id: str, current_user: User = Depends(get_current_user)):
+    try:
+        updated_story = await toggle_story_privacy(story_id, current_user.id)
+        return updated_story
+    except ValueError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")

@@ -200,3 +200,42 @@ async def unsave_story(story_id: str, user_id: str) -> None:
         user.saved_books.remove(story_id)
         await update_story(story)
         await update_user(user)
+
+
+async def toggle_story_privacy(story_id: str, user_id: str) -> Story:
+    """
+    Toggle the privacy setting of a story and update the user's book lists.
+
+    Parameters:
+        story_id (str): The ID of the story to toggle.
+        user_id (str): The ID of the user who owns the story.
+
+    Returns:
+        Story: The updated Story object.
+    """
+    story = await get_story_by_id(story_id)
+    user = await get_user_by_id(user_id)
+
+    if story.author_id != user_id:
+        raise ValueError("User does not have permission to modify this story")
+
+    # Toggle the privacy setting
+    story.private = not story.private
+
+    # Update the user's book lists
+    if story.private:
+        if story_id in user.public_books:
+            user.public_books.remove(story_id)
+        if story_id not in user.private_books:
+            user.private_books.append(story_id)
+    else:
+        if story_id in user.private_books:
+            user.private_books.remove(story_id)
+        if story_id not in user.public_books:
+            user.public_books.append(story_id)
+
+    # Update both the story and the user in the database
+    await update_story(story)
+    await update_user(user)
+
+    return story
