@@ -4,7 +4,18 @@ from storytopia_backend.api.middleware.auth import get_current_user
 from storytopia_backend.api.components.user.model import User
 from .repository import get_all_stories, update_story
 from .model import StoryPost, Story, GenerateStoryRequest
-from .services import create_user_story, get_story, generate_story_with_images, get_recent_public_stories, like_story, save_story, unlike_story, unsave_story, generate_speech_for_page
+from .services import (
+    create_user_story,
+    get_story,
+    generate_story_with_images,
+    get_recent_public_stories,
+    like_story,
+    save_story,
+    toggle_story_privacy,
+    unlike_story,
+    unsave_story,
+    generate_speech_for_page
+)
 from dotenv import load_dotenv
 import asyncio
 
@@ -56,7 +67,9 @@ async def get_story_tts(story_id: str, current_user: User = Depends(get_current_
 
 
 @router.post("/like")
-async def like_story_endpoint(story_id: str, current_user: User = Depends(get_current_user)):
+async def like_story_endpoint(
+    story_id: str, current_user: User = Depends(get_current_user)
+):
     """
     Endpoint to like a story.
 
@@ -72,7 +85,9 @@ async def like_story_endpoint(story_id: str, current_user: User = Depends(get_cu
 
 
 @router.post("/unlike")
-async def unlike_story_endpoint(story_id: str, current_user: User = Depends(get_current_user)):
+async def unlike_story_endpoint(
+    story_id: str, current_user: User = Depends(get_current_user)
+):
     """
     Endpoint to unlike a story.
 
@@ -88,7 +103,9 @@ async def unlike_story_endpoint(story_id: str, current_user: User = Depends(get_
 
 
 @router.post("/save")
-async def save_story_endpoint(story_id: str, current_user: User = Depends(get_current_user)):
+async def save_story_endpoint(
+    story_id: str, current_user: User = Depends(get_current_user)
+):
     """
     Endpoint to save a story.
 
@@ -104,7 +121,9 @@ async def save_story_endpoint(story_id: str, current_user: User = Depends(get_cu
 
 
 @router.post("/unsave")
-async def unsave_story_endpoint(story_id: str, current_user: User = Depends(get_current_user)):
+async def unsave_story_endpoint(
+    story_id: str, current_user: User = Depends(get_current_user)
+):
     """
     Endpoint to unsave a story.
 
@@ -134,6 +153,7 @@ async def generate_story_with_images_endpoint(
     return {"message": "Story generation started"}
 
 
+
 @router.get("/explore", response_model=List[Story])
 async def get_explore_stories(
     page: int = Query(1, ge=1),
@@ -150,3 +170,14 @@ async def get_explore_stories(
         List[Story]: A paginated list of the most recent public stories.
     """
     return await get_recent_public_stories(page, page_size)
+
+
+@router.post("/story/{story_id}/toggle-privacy", response_model=Story)
+async def toggle_privacy(story_id: str, current_user: User = Depends(get_current_user)):
+    try:
+        updated_story = await toggle_story_privacy(story_id, current_user.id)
+        return updated_story
+    except ValueError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")

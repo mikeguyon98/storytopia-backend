@@ -2,16 +2,29 @@ from typing import List
 from .model import StoryPost, Story
 from storytopia_backend.api.components.user.model import User
 from datetime import datetime, timezone
-from .repository import create_story, get_story_by_id, get_recent_public_stories_from_db, update_story
+from .repository import (
+    create_story,
+    get_story_by_id,
+    get_recent_public_stories_from_db,
+    update_story,
+    send_story_generation_email,
+)
 from storytopia_backend.services.llm import StoryGenerationService
 from storytopia_backend.services.stable_diffusion import ImageGenerationService
-from storytopia_backend.api.components.user.repository import update_user, get_user_by_id
+from storytopia_backend.api.components.user.repository import (
+    update_user,
+    get_user_by_id,
+)
 from google.cloud import storage
-from storytopia_backend.api.components.story import image_service, story_service
+from storytopia_backend.api.components.story import (
+    image_service,
+    story_service,
+)
 import json
 from google.cloud import texttospeech
 import asyncio
 from dotenv import load_dotenv
+from storytopia_backend.firebase_config import db
 import uuid
 from fastapi import BackgroundTasks
 import os
@@ -83,8 +96,8 @@ async def create_user_story(story_post: StoryPost, current_user: User, backgroun
         "private": story_post.private,
         "story_pages": [],
         "story_images": [],
-        "likes": 0,
-        "saves": 0,
+        "likes": [],
+        "saves": [],
         "id": "",
     }
     story_id = await create_story(story_data)
@@ -106,7 +119,10 @@ async def get_story(story_id: str, user_id: str) -> Story:
 
 
 async def generate_story_with_images(
-    prompt: str, style: str, private: bool, current_user: User,
+    prompt: str,
+    style: str,
+    private: bool,
+    current_user: User,
 ) -> Story:
     """
     Generate a story based on the given prompt, create images, and return a complete Story object.
@@ -126,7 +142,7 @@ async def generate_story_with_images(
         description=story_data["Prompt"],
         story_pages=story_data["Summaries"],
         story_images=image_urls,
-        private=private,  # May want to make this configurable
+        private=private,
         createdAt=datetime.now(timezone.utc).isoformat(),
         id="",
         likes=[],
@@ -144,6 +160,9 @@ async def generate_story_with_images(
         current_user.public_books.append(story_id)
 
     await update_user(current_user)
+
+    # Send email notification
+    await send_story_generation_email(current_user.id, story.description)
 
     return story
 
@@ -245,3 +264,42 @@ async def unsave_story(story_id: str, user_id: str) -> None:
         user.saved_books.remove(story_id)
         await update_story(story)
         await update_user(user)
+
+
+async def toggle_story_privacy(story_id: str, user_id: str) -> Story:
+    """
+    Toggle the privacy setting of a story and update the user's book lists.
+
+    Parameters:
+        story_id (str): The ID of the story to toggle.
+        user_id (str): The ID of the user who owns the story.
+
+    Returns:
+        Story: The updated Story object.
+    """
+    story = await get_story_by_id(story_id)
+    user = await get_user_by_id(user_id)
+
+    if story.author_id != user_id:
+        raise ValueError("User does not have permission to modify this story")
+
+    # Toggle the privacy setting
+    story.private = not story.private
+
+    # Update the user's book lists
+    if story.private:
+        if story_id in user.public_books:
+            user.public_books.remove(story_id)
+        if story_id not in user.private_books:
+            user.private_books.append(story_id)
+    else:
+        if story_id in user.private_books:
+            user.private_books.remove(story_id)
+        if story_id not in user.public_books:
+            user.public_books.append(story_id)
+
+    # Update both the story and the user in the database
+    await update_story(story)
+    await update_user(user)
+
+    return story

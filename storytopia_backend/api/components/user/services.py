@@ -22,7 +22,12 @@ from fastapi import HTTPException
 from storytopia_backend.api.components.story.repository import get_story_by_id
 from storytopia_backend.api.components.story.model import Story
 from .model import User, UserUpdate
-from .repository import get_user_by_id, update_user, check_username_exists
+from .repository import (
+    get_user_by_id,
+    update_user,
+    check_username_exists,
+    get_user_by_username,
+)
 
 
 async def update_user_details(user_id: str, user_update: UserUpdate) -> User:
@@ -131,3 +136,49 @@ async def get_user_public_stories(story_ids: List[str]) -> List[Story]:
     """
     stories = [await get_story_by_id(story_id) for story_id in story_ids]
     return [story for story in stories if not story.private]
+
+async def get_public_user_info(username: str) -> dict:
+    """
+    Get public information for a user.
+
+    Parameters:
+        username (str): The username of the user.
+
+    Returns:
+        Dict: A dictionary containing public user information.
+    """
+    user = await get_user_by_username(username)
+    if not user:
+        return None
+    return {
+        "username": user.username,
+        "profile_picture": user.profile_picture,
+        "bio": user.bio,
+        "public_books": user.public_books,
+    }
+
+
+async def unfollow_user(current_user_id: str, unfollow_user_id: str) -> None:
+    """
+    Unfollow a user.
+
+    Parameters:
+        current_user_id (str): The ID of the current user.
+        unfollow_user_id (str): The ID of the user to unfollow.
+
+    Returns:
+        None
+    """
+    current_user = await get_user_by_id(current_user_id)
+    user_to_unfollow = await get_user_by_id(unfollow_user_id)
+
+    if not user_to_unfollow:
+        raise HTTPException(status_code=404, detail="User to unfollow not found")
+
+    if unfollow_user_id in current_user.following:
+        current_user.following.remove(unfollow_user_id)
+        user_to_unfollow.followers.remove(current_user_id)
+        await update_user(current_user)
+        await update_user(user_to_unfollow)
+    else:
+        raise HTTPException(status_code=400, detail="You are not following this user")
