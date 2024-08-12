@@ -174,7 +174,7 @@ async def get_liked_posts(
     return await get_user_stories(current_user.liked_books)
 
 
-@router.get("/users/username/{username}", response_model=dict)
+@router.get("/username/{username}", response_model=dict)
 async def get_public_info_by_username(
     username: str, current_user: User = Depends(get_current_user)
 ):
