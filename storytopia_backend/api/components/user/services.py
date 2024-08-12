@@ -117,3 +117,17 @@ async def get_user_stories(story_ids: List[str]) -> List[Story]:
         List[Story]: A list of story objects.
     """
     return [await get_story_by_id(story_id) for story_id in story_ids]
+
+async def get_user_public_stories(story_ids: List[str]) -> List[Story]:
+    """
+    Retrieve a list of stories based on the provided story IDs, 
+    filtering out stories that are marked as private.
+
+    Parameters:
+        story_ids (List[str]): The list of story IDs to retrieve.
+
+    Returns:
+        List[Story]: A list of non-private story objects.
+    """
+    stories = [await get_story_by_id(story_id) for story_id in story_ids]
+    return [story for story in stories if not story.private]

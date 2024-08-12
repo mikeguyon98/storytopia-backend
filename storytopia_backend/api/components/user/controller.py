@@ -19,7 +19,7 @@ from typing import List
 from fastapi import APIRouter, Depends
 from storytopia_backend.api.middleware.auth import get_current_user
 from .services import (
-    follow_user, get_followers, get_following, update_user_details, get_user_stories
+    follow_user, get_followers, get_following, update_user_details, get_user_stories, get_user_public_stories
 )
 from .model import User, UserUpdate
 from storytopia_backend.api.components.story.model import Story
@@ -132,7 +132,7 @@ async def get_saved_posts(current_user: User = Depends(get_current_user)) -> Lis
     Returns:
         List[Story]: A list of saved stories saved by the user.
     """
-    return await get_user_stories(current_user.saved_books)
+    return await get_user_public_stories(current_user.saved_books)
 
 @router.get("/me/liked_posts", response_model=List[Story])
 async def get_liked_posts(current_user: User = Depends(get_current_user)) -> List[Story]:
@@ -145,4 +145,4 @@ async def get_liked_posts(current_user: User = Depends(get_current_user)) -> Lis
     Returns:
         List[Story]: A list of liked stories liked by the user.
     """
-    return await get_user_stories(current_user.liked_books)
+    return await get_user_public_stories(current_user.liked_books)
