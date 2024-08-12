@@ -14,7 +14,11 @@ class StoryGenerationService:
         vertexai.init(project=project_id, location=location)
         self.model = GenerativeModel(model_name)
 
+
     async def generate_story(self, prompt: str, disabilities: str) -> List[str]:
+
+    async def generate_story(self, prompt: str) -> str:
+
         """
         Generate a multi-scene book story based on the given prompt.
 
@@ -30,6 +34,9 @@ class StoryGenerationService:
             "Scenes": List[string],
             "Summaries": List[string]
         }
+
+        Raises:
+        - json.JSONDecodeError: If the generated content is not valid JSON.
         """
 
         full_prompt = f"""
@@ -65,7 +72,7 @@ class StoryGenerationService:
         - Avoid prompts that could generate hate speech, discriminatory content, or extreme political imagery.
 
         For each story text in "Summaries":
-        - Provide story text for each scenece, each around 3 to 4 sentences
+        - Provide story text for each scene, each around 3 to 4 sentences
         - Make it engaging, enjoyable and educational for readers to read.
 
         Ensure the output is valid JSON format with matching numbers of detailed scenes and summaries.
@@ -75,18 +82,13 @@ class StoryGenerationService:
         generated_text = response.text
 
         try:
-            json.loads(generated_text)  # Just to validate JSON structure
+            json.loads(generated_text)  # Validate JSON structure
             return generated_text  # Return the original JSON string if valid
-        except json.JSONDecodeError:
-            # If parsing fails, return a simple error JSON
-            return json.dumps(
-                {
-                    "Prompt": prompt,
-                    "Title": "Error: Invalid JSON generated",
-                    "Scenes": ["Error: Unable to generate valid story data"],
-                    "Summaries": ["Error: Unable to generate scene summaries"],
-                }
-            )
+        except json.JSONDecodeError as e:
+            # If parsing fails, raise the JSONDecodeError
+            raise json.JSONDecodeError(
+                f"Invalid JSON generated: {str(e)}", generated_text, 0
+            ) from None
 
 
 # # Sample test

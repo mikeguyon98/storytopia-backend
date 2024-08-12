@@ -30,6 +30,23 @@ async def get_user_by_id(user_id: str) -> User:
     user_doc = user_ref.get()
     return User(**user_doc.to_dict()) if user_doc.exists else None
 
+async def get_user_by_username(username: str) -> User:
+    """
+    Retrieve a user by their username.
+
+    Parameters:
+    username (str): The username of the user to retrieve.
+
+    Returns:
+    User: The user object if found, otherwise None.
+    """
+    users_ref = db.collection("users")
+    query = users_ref.where("username", "==", username).limit(1)
+    docs = query.get()
+    if docs:
+        return User(**docs[0].to_dict())
+    return None
+
 
 async def update_user(user: User) -> None:
     """
@@ -59,3 +76,21 @@ async def check_username_exists(username: str) -> bool:
     query = users_ref.where("username", "==", username).limit(1)
     docs = query.get()
     return len(docs) > 0
+
+
+async def get_user_by_username(username: str) -> User:
+    """
+    Retrieve a user by their username.
+
+    Parameters:
+    username (str): The username of the user to retrieve.
+
+    Returns:
+    User: The user object if found, otherwise None.
+    """
+    users_ref = db.collection("users")
+    query = users_ref.where("username", "==", username).limit(1)
+    docs = query.get()
+    if docs:
+        return User(**docs[0].to_dict())
+    return None
