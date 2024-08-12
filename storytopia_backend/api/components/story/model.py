@@ -29,6 +29,7 @@ class Story(BaseModel):
         saves (int): The number of times the story has been saved.
     """
 
+    audio_files: List[str]
     title: str
     author: str
     author_id: str

@@ -1,8 +1,8 @@
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from storytopia_backend.api.middleware.auth import get_current_user
 from storytopia_backend.api.components.user.model import User
-from .repository import get_all_stories
+from .repository import get_all_stories, update_story
 from .model import StoryPost, Story, GenerateStoryRequest
 from .services import (
     create_user_story,
@@ -14,8 +14,10 @@ from .services import (
     toggle_story_privacy,
     unlike_story,
     unsave_story,
+    generate_speech_for_page
 )
 from dotenv import load_dotenv
+import asyncio
 
 load_dotenv()
 
@@ -32,9 +34,11 @@ async def get_all_stories_endpoints():
 
 @router.post("/story")
 async def create_stories_endpoint(
-    story: StoryPost, current_user: User = Depends(get_current_user)
+    story: StoryPost,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
 ):
-    return await create_user_story(story, current_user)
+    return await create_user_story(story, current_user, background_tasks)
 
 
 @router.get("/story/{story_id}")
@@ -42,6 +46,24 @@ async def get_story_by_id_endpoint(
     story_id: str, current_user: User = Depends(get_current_user)
 ):
     return await get_story(story_id, current_user.id)
+
+
+@router.get("/story/{story_id}/tts")
+async def get_story_tts(story_id: str, current_user: User = Depends(get_current_user)):
+    story = await get_story(story_id, current_user.id)
+    if not story:
+        raise HTTPException(status_code=404, detail="Story not found")
+
+    if story.audio_files:
+        return {"audio_files": story.audio_files}
+
+    try:
+        urls = await asyncio.gather(*[generate_speech_for_page(page) for page in story.story_pages])
+        story.audio_files = urls
+        await update_story(story)
+        return {"audio_files": urls}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/like")
@@ -126,6 +148,7 @@ async def generate_story_with_images_endpoint(
     return await generate_story_with_images(
         request.prompt, request.style, request.private, current_user
     )
+
 
 
 @router.get("/explore", response_model=List[Story])
