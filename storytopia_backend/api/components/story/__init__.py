@@ -31,6 +31,7 @@ story_service_config = {
     "model_name": "gemini-1.5-pro",
 }
 
+
 # Service initialization
 image_service = ImageGenerationService(**image_service_config)
 story_service = StoryGenerationService(**story_service_config)
