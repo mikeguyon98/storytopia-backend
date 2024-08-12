@@ -126,7 +126,7 @@ async def generate_story_with_images_endpoint(
     """
     Generate a story based on the given prompt, create images, and return a complete Story object.
     """
-    return await generate_story_with_images(request.prompt, request.style, request.private, current_user)
+    return await generate_story_with_images(request.prompt, request.disabilities, request.style, request.private, current_user)
 
 
 @router.get("/explore", response_model=List[Story])

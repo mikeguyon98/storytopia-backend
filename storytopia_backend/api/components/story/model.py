@@ -60,5 +60,6 @@ class StoryPost(BaseModel):
 
 class GenerateStoryRequest(BaseModel):
     prompt: str
+    disabilities: str
     style: str
     private: bool
