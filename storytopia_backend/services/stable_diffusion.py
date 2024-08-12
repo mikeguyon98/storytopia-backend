@@ -29,7 +29,7 @@ class ImageGenerationService:
         self.folder_name = folder_name
 
     async def generate_images(
-        self, scene_descriptions: List[str], style: str
+        self, scene_descriptions: List[str], style: str, disabilities: str
     ) -> List[str]:
         image_urls = []
         for index, description in enumerate(scene_descriptions):
@@ -40,7 +40,9 @@ class ImageGenerationService:
                     # Generate image using DALL-E 3
                     response = self.openai_client.images.generate(
                         model="dall-e-3",
-                        prompt=f"{description} | Remove all dialogue/text in image. Use this artistic style for the image: {style}",
+                        prompt=f"{description} | Remove all dialogue/text in image. Use this artistic style for the image: {
+                            style}. If there are disabilities listed here:"
+                        + "{disabilities} that would effect the viewers eyes / ability to see, such as color blindness, ect.. then take that into account to make images that people with these disabilites could easily view",
                         size="1792x1024",
                         quality="standard",
                         n=1,
@@ -54,27 +56,32 @@ class ImageGenerationService:
                     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
 
                     # Create a unique blob name using the timestamp
-                    blob_name = f"{self.folder_name}/scene_{index + 1}_{timestamp}.png"
+                    blob_name = f"{
+                        self.folder_name}/scene_{index + 1}_{timestamp}.png"
 
                     blob = self.bucket.blob(blob_name)
-                    blob.upload_from_string(image_content, content_type="image/png")
+                    blob.upload_from_string(
+                        image_content, content_type="image/png")
                     # Make the blob publicly accessible
                     blob.make_public()
                     # Add the public URL to the list
                     image_urls.append(blob.public_url)
                     break  # Successfully generated and uploaded the image, exit the retry loop
                 except Exception as e:
-                    print(f"Error generating image for scene {index + 1}: {str(e)}")
+                    print(f"Error generating image for scene {
+                          index + 1}: {str(e)}")
                     if retry_count < max_retries - 1:
                         retry_count += 1
-                        print(f"Retrying... Attempt {retry_count + 1} of {max_retries}")
+                        print(f"Retrying... Attempt {
+                              retry_count + 1} of {max_retries}")
                         # Regenerate the description
                         new_description = await self.regenerate_description(description)
                         description = new_description
                         # Add a small delay before retrying
                         await asyncio.sleep(random.uniform(1, 3))
                     else:
-                        print(f"Failed to generate image after {max_retries} attempts.")
+                        print(f"Failed to generate image after {
+                              max_retries} attempts.")
                         # You might want to add a placeholder image or handle this case as appropriate
                         image_urls.append(None)
 
