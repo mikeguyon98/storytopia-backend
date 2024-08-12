@@ -76,7 +76,7 @@ async def follow_user(current_user_id: str, follow_username: str) -> None:
     """
     current_user = await get_user_by_id(current_user_id)
     user_to_follow = await get_user_by_username(follow_username)
-    if follow_username not in current_user.following:
+    if user_to_follow.id not in current_user.following:
         current_user.following.append(user_to_follow.id)
         user_to_follow.followers.append(current_user_id)
         await update_user(current_user)
