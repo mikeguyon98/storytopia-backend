@@ -140,14 +140,17 @@ async def unsave_story_endpoint(
 
 @router.post("/generate-story-with-images")
 async def generate_story_with_images_endpoint(
-    request: GenerateStoryRequest, current_user: User = Depends(get_current_user)
-) -> Story:
+    request: GenerateStoryRequest, background_tasks: BackgroundTasks, current_user: User = Depends(get_current_user)
+) -> dict:
     """
     Generate a story based on the given prompt, create images, and return a complete Story object.
     """
-    return await generate_story_with_images(
-        request.prompt, request.style, request.private, current_user
-    )
+    def run_generate_story_with_images():
+        import asyncio
+        asyncio.run(generate_story_with_images(request.prompt, request.style, request.private, current_user))
+
+    background_tasks.add_task(run_generate_story_with_images)
+    return {"message": "Story generation started"}
 
 
 
