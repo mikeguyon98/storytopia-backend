@@ -126,15 +126,46 @@ async def get_story(story_id: str, user_id: str) -> Story:
 
 
 async def generate_story_with_images(
+
+    prompt: str, disabilities: str, style: str, private: bool, current_user: User,
+
     prompt: str,
     style: str,
     private: bool,
     current_user: User,
     disability: str = None,
+
 ) -> Story:
     """
     Generate a story based on the given prompt, create images, and return a complete Story object.
     """
+
+    # Generate story
+    story_json = await story_service.generate_story(prompt, disabilities)
+    story_data = json.loads(story_json)
+
+    # Generate images based on the detailed scene descriptions
+    image_urls = await image_service.generate_images(story_data["Scenes"], style, disabilities)
+
+    # Create a Story object
+    story = Story(
+        title=story_data["Title"],
+        author=current_user.username,
+        author_id=current_user.id,
+        description=story_data["Prompt"],
+        story_pages=story_data["Summaries"],
+        story_images=image_urls,
+        private=private,  # May want to make this configurable
+        createdAt=datetime.now(timezone.utc).isoformat(),
+        id="",
+        likes=0,
+        saves=0,
+    )
+
+    # Save the story to the database
+    story_id = await create_story(story.model_dump())
+    story.id = story_id
+
     try:
         # Generate story
         story_json = await story_service.generate_story(prompt)
@@ -172,6 +203,7 @@ async def generate_story_with_images(
         urls = await asyncio.gather(*[generate_speech_for_page(page) for page in story.story_pages])
         story.audio_files = urls
         await update_story(story)
+
 
         # Send email notification
         await send_story_generation_email(current_user.id, story.description)

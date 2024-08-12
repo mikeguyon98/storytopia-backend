@@ -14,7 +14,11 @@ class StoryGenerationService:
         vertexai.init(project=project_id, location=location)
         self.model = GenerativeModel(model_name)
 
+
+    async def generate_story(self, prompt: str, disabilities: str) -> List[str]:
+
     async def generate_story(self, prompt: str) -> str:
+
         """
         Generate a multi-scene book story based on the given prompt.
 
@@ -34,9 +38,12 @@ class StoryGenerationService:
         Raises:
         - json.JSONDecodeError: If the generated content is not valid JSON.
         """
+
         full_prompt = f"""
         Generate a comic book story title and 10 scene descriptions based on the following prompt: {prompt}
-
+        If there are disabilities listed here: {disabilities} then when you are generating the prompt keep in mind these disabilities, and make it so that a read
+        with these disabilities could easily read the story. Only take into consideration disabilities that would effect the readers
+        ability to read the story and do not make it obvious you know the disability, just write the story they would enjoy.
         The output should be a JSON object with the following structure:
         {{
             "Prompt": "The original prompt",

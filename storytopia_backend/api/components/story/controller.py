@@ -150,17 +150,7 @@ async def generate_story_with_images_endpoint(
     Generate a story based on the given prompt, create images, and return a complete Story object.
     """
 
-    def run_generate_story_with_images():
-        import asyncio
-
-        asyncio.run(
-            generate_story_with_images(
-                request.prompt, request.style, request.private, current_user
-            )
-        )
-
-    background_tasks.add_task(run_generate_story_with_images)
-    return {"message": "Story generation started"}
+    return await generate_story_with_images(request.prompt, request.disabilities, request.style, request.private, current_user)
 
 
 @router.get("/explore", response_model=List[Story])
