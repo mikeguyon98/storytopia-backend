@@ -123,9 +123,10 @@ async def get_user_stories(story_ids: List[str]) -> List[Story]:
     """
     return [await get_story_by_id(story_id) for story_id in story_ids]
 
+
 async def get_user_public_stories(story_ids: List[str]) -> List[Story]:
     """
-    Retrieve a list of stories based on the provided story IDs, 
+    Retrieve a list of stories based on the provided story IDs,
     filtering out stories that are marked as private.
 
     Parameters:
@@ -136,6 +137,7 @@ async def get_user_public_stories(story_ids: List[str]) -> List[Story]:
     """
     stories = [await get_story_by_id(story_id) for story_id in story_ids]
     return [story for story in stories if not story.private]
+
 
 async def get_public_user_info(username: str) -> dict:
     """
@@ -182,3 +184,26 @@ async def unfollow_user(current_user_id: str, username: str) -> None:
         await update_user(user_to_unfollow)
     else:
         raise HTTPException(status_code=400, detail="You are not following this user")
+
+
+async def is_following_user(current_user_id: str, username: str) -> bool:
+    """
+    Check if a user is following another user.
+
+    Parameters:
+        current_user_id (str): The ID of the current user.
+        username (str): The username of the user to check.
+
+    Returns:
+        bool: True if the current user is following the specified user, False otherwise.
+
+    Raises:
+        HTTPException: If the user to check is not found.
+    """
+    current_user = await get_user_by_id(current_user_id)
+    user_to_check = await get_user_by_username(username)
+
+    if not user_to_check:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return user_to_check.id in current_user.following

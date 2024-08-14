@@ -28,6 +28,7 @@ from .services import (
     get_user_stories,
     get_user_public_stories,
     get_public_user_info,
+    is_following_user,
 )
 from .model import User, UserUpdate
 from storytopia_backend.api.components.story.model import Story
@@ -213,3 +214,21 @@ async def get_public_info_by_username(
     if not user_info:
         raise HTTPException(status_code=404, detail="User not found")
     return user_info
+
+
+@router.get("/is-following/{username}", response_model=dict)
+async def is_following_user_endpoint(
+    username: str, current_user: User = Depends(get_current_user)
+) -> dict:
+    """
+    Check if the current user is following another user.
+
+    Parameters:
+        username (str): The username of the user to check.
+        current_user (User): The current authenticated user.
+
+    Returns:
+        dict: A dictionary containing a boolean indicating if the current user is following the specified user.
+    """
+    is_following = await is_following_user(current_user.id, username)
+    return {"is_following": is_following}
