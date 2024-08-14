@@ -3,6 +3,7 @@ from typing import List
 import os
 import asyncio
 import vertexai
+from openai import OpenAI
 from vertexai.generative_models import GenerativeModel
 from dotenv import load_dotenv
 
@@ -10,9 +11,12 @@ load_dotenv()
 
 
 class StoryGenerationService:
-    def __init__(self, project_id: str, location: str, model_name: str):
+    def __init__(
+        self, project_id: str, location: str, model_name: str, openai_client: OpenAI
+    ):
         vertexai.init(project=project_id, location=location)
         self.model = GenerativeModel(model_name)
+        self.openai_client = openai_client
 
     async def generate_story(self, prompt: str) -> str:
         """
@@ -30,9 +34,6 @@ class StoryGenerationService:
             "Scenes": List[string],
             "Summaries": List[string]
         }
-
-        Raises:
-        - json.JSONDecodeError: If the generated content is not valid JSON.
         """
         full_prompt = f"""
         Generate a comic book story title and 10 scene descriptions based on the following prompt: {prompt}
@@ -77,23 +78,62 @@ class StoryGenerationService:
         try:
             json.loads(generated_text)  # Validate JSON structure
             return generated_text  # Return the original JSON string if valid
+        except json.JSONDecodeError:
+            # If parsing fails, use GPT-4 to fix the JSON
+            return await self._fix_json_with_gpt4(generated_text)
+
+    async def _fix_json_with_gpt4(self, invalid_json: str) -> str:
+        """
+        Use GPT-4 to fix invalid JSON.
+
+        Args:
+        - invalid_json (str): The invalid JSON string.
+
+        Returns:
+        - str: A valid JSON string.
+        """
+        prompt = f"""
+        The following text was supposed to be a valid JSON object, but it contains errors. 
+        Please fix the JSON and ensure it follows this structure:
+
+        {{
+            "Prompt": "The original prompt",
+            "Title": "The story title",
+            "Scenes": [
+                "Detailed scene 1 description",
+                "Detailed scene 2 description",
+                ...
+            ],
+            "Summaries": [
+                "scene 1 story text",
+                "scene 2 story text",
+                ...
+            ]
+        }}
+
+        Make sure there are 10 scenes and 10 summaries.
+        Here's the invalid JSON:
+
+        {invalid_json}
+
+        Please provide only the corrected JSON as your response, with no additional explanation.
+        """
+
+        response = self.openai_client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a helpful assistant that fixes JSON formatting issues.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+        )
+
+        fixed_json = response.choices[0].message.content.strip()
+
+        try:
+            json.loads(fixed_json)  # Validate the fixed JSON
+            return fixed_json
         except json.JSONDecodeError as e:
-            # If parsing fails, raise the JSONDecodeError
-            raise json.JSONDecodeError(
-                f"Invalid JSON generated: {str(e)}", generated_text, 0
-            ) from None
-
-
-# # Sample test
-# if __name__ == "__main__":
-#     # Create StoryGenerationService instance
-#     story_service = StoryGenerationService(
-#         os.getenv("GOOGLE_CLOUD_PROJECT"),
-#         os.getenv("GOOGLE_CLOUD_LOCATION"),
-#         "gemini-1.5-pro",
-#     )
-
-#     # Test generate_story function
-#     test_prompt = "Nobel Prize Winner in Chemistry wins UFC Welterweight Title"
-#     testing_story_parts = asyncio.run(story_service.generate_story(test_prompt))
-#     print(testing_story_parts)
+            raise ValueError(f"GPT-4 was unable to fix the JSON. Error: {str(e)}")
