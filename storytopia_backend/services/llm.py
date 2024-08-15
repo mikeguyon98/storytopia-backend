@@ -20,13 +20,13 @@ class StoryGenerationService:
 
     async def generate_story(self, prompt: str) -> str:
         """
-        Generate a multi-scene book story based on the given prompt.
+        Generate educational content based on the given prompt.
 
         Args:
-        - prompt (str): The prompt for the story.
+        - prompt (str): The educational topic or concept to explore.
 
         Returns:
-        - str: A JSON string containing the prompt, title, detailed scenes, and story text to accompany each image.
+        - str: A JSON string containing the prompt, title, detailed visual descriptions, and educational text for each concept.
         The JSON structure is:
         {
             "Prompt": string,
@@ -36,40 +36,40 @@ class StoryGenerationService:
         }
         """
         full_prompt = f"""
-        Generate a comic book story title and 10 scene descriptions based on the following prompt: {prompt}
+        Generate educational content with a title and 10 concept descriptions based on the following prompt: {prompt}
 
         The output should be a JSON object with the following structure:
         {{
             "Prompt": "The original prompt",
-            "Title": "The story title",
+            "Title": "The educational topic title",
             "Scenes": [
-                "Detailed scene 1 description",
-                "Detailed scene 2 description",
+                "Detailed visual description 1",
+                "Detailed visual description 2",
                 ...
             ],
             "Summaries": [
-                "scene 1 story text",
-                "scene 2 story text",
+                "Concept 1 educational text",
+                "Concept 2 educational text",
                 ...
             ]
         }}
 
-        For each detailed scene description in "Scenes":
-        - Focus on clear, visually descriptive elements that can be depicted in a single image.
-        - Include relevant visual details about characters, setting, and action.
-        - Ensure the scenes contribute to a cohesive and engaging narrative arc.
-        - Dialogue (subtitle) should be brief and contribute positively to the story.
+        For each detailed visual description in "Scenes":
+        - Focus on clear, visually descriptive elements that illustrate the educational concept.
+        - Include relevant visual details about examples or scenarios that explain the concept.
+        - Ensure the visual descriptions contribute to a cohesive and engaging educational narrative.
         - Keep the description suitable for a general audience, avoiding any sensitive or controversial content.
-        - Ensure there are no copyright issues by not requesting specific copyrighted characters, logos, or branded content.
+        - Ensure there are no copyright issues by not requesting specific copyrighted images, logos, or branded content.
         - Avoid requesting images of real people, especially public figures or celebrities.
-        - Don't include explicit violence, gore, or disturbing imagery in your prompts.
-        - Avoid prompts that could generate hate speech, discriminatory content, or extreme political imagery.
+        - Don't include explicit or disturbing imagery in your descriptions.
+        - Avoid descriptions that could generate hate speech, discriminatory content, or extreme political imagery.
 
-        For each story text in "Summaries":
-        - Provide story text for each scene, each around 3 to 4 sentences
-        - Make it engaging, enjoyable and educational for readers to read.
+        For each educational text in "Summaries":
+        - Provide 3 to 4 sentences of engaging and informative text for each concept.
+        - Explain the concept clearly and concisely, making it educational and enjoyable for readers.
+        - Relate the text to the visual description to reinforce learning.
 
-        Ensure the output is valid JSON format with matching numbers of detailed scenes and summaries.
+        Ensure the output is valid JSON format with matching numbers of detailed visual descriptions and educational texts.
         """
 
         response = self.model.generate_content(full_prompt)
@@ -98,15 +98,15 @@ class StoryGenerationService:
 
         {{
             "Prompt": "The original prompt",
-            "Title": "The story title",
+            "Title": "The educational topic title",
             "Scenes": [
-                "Detailed scene 1 description",
-                "Detailed scene 2 description",
+                "Detailed visual description 1",
+                "Detailed visual description 2",
                 ...
             ],
             "Summaries": [
-                "scene 1 story text",
-                "scene 2 story text",
+                "Concept 1 educational text",
+                "Concept 2 educational text",
                 ...
             ]
         }}
