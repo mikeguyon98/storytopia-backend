@@ -155,7 +155,11 @@ async def generate_story_with_images_endpoint(
 
         asyncio.run(
             generate_story_with_images(
-                request.prompt, request.style, request.private, current_user
+                request.prompt,
+                request.style,
+                request.private,
+                current_user,
+                request.disability,
             )
         )
 

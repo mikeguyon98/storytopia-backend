@@ -137,11 +137,13 @@ async def generate_story_with_images(
     """
     try:
         # Generate story
-        story_json = await story_service.generate_story(prompt)
+        story_json = await story_service.generate_story(prompt, disability)
         story_data = json.loads(story_json)
 
         # Generate images based on the detailed scene descriptions
-        image_urls = await image_service.generate_images(story_data["Scenes"], style)
+        image_urls = await image_service.generate_images(
+            story_data["Scenes"], style, disability
+        )
 
         # Create a Story object
         story = Story(
@@ -157,6 +159,7 @@ async def generate_story_with_images(
             likes=[],
             saves=[],
             audio_files=[],
+            disability=disability,  # Add this line to include the disability in the Story object
         )
 
         # Save the story to the database
@@ -169,7 +172,9 @@ async def generate_story_with_images(
             current_user.public_books.append(story_id)
 
         await update_user(current_user)
-        urls = await asyncio.gather(*[generate_speech_for_page(page) for page in story.story_pages])
+        urls = await asyncio.gather(
+            *[generate_speech_for_page(page) for page in story.story_pages]
+        )
         story.audio_files = urls
         await update_story(story)
 

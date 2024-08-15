@@ -18,38 +18,42 @@ class StoryGenerationService:
         self.model = GenerativeModel(model_name)
         self.openai_client = openai_client
 
-    async def generate_story(self, prompt: str) -> str:
+    async def generate_story(self, prompt: str, disability: str = None) -> str:
         """
-        Generate educational content based on the given prompt.
+        Generate educational content based on the given prompt, considering any specified disability.
 
         Args:
         - prompt (str): The educational topic or concept to explore.
+        - disability (str, optional): The specific disability to consider (e.g., "color blindness", "dyslexia").
 
         Returns:
         - str: A JSON string containing the prompt, title, detailed visual descriptions, and educational text for each concept.
-        The JSON structure is:
-        {
-            "Prompt": string,
-            "Title": string,
-            "Scenes": List[string],
-            "Summaries": List[string]
-        }
         """
+        disability_consideration = ""
+        if disability:
+            disability_consideration = f"""
+            Consider the following disability when generating the content: {disability}
+            - For visual descriptions, ensure they are accessible and meaningful for individuals with this disability.
+            - For educational text, adapt the explanations and examples to be more inclusive and effective for learners with this disability.
+            """
+
         full_prompt = f"""
-        Generate educational content with a title and 10 concept descriptions based on the following prompt: {prompt}
+        Generate educational content with a concise title and 10 concept descriptions based on the following prompt: {prompt}
+
+        {disability_consideration}
 
         The output should be a JSON object with the following structure:
         {{
             "Prompt": "The original prompt",
             "Title": "The educational topic title",
             "Scenes": [
-                "Detailed visual description 1",
-                "Detailed visual description 2",
+                "Scene 1 content",
+                "Scene 2 content",
                 ...
             ],
             "Summaries": [
-                "Concept 1 educational text",
-                "Concept 2 educational text",
+                "Summary for Scene 1",
+                "Summary for Scene 2",
                 ...
             ]
         }}
@@ -59,15 +63,13 @@ class StoryGenerationService:
         - Include relevant visual details about examples or scenarios that explain the concept.
         - Ensure the visual descriptions contribute to a cohesive and engaging educational narrative.
         - Keep the description suitable for a general audience, avoiding any sensitive or controversial content.
-        - Ensure there are no copyright issues by not requesting specific copyrighted images, logos, or branded content.
-        - Avoid requesting images of real people, especially public figures or celebrities.
-        - Don't include explicit or disturbing imagery in your descriptions.
-        - Avoid descriptions that could generate hate speech, discriminatory content, or extreme political imagery.
+        - If a disability is specified, ensure the descriptions are accessible and meaningful for individuals with that disability.
 
         For each educational text in "Summaries":
         - Provide 3 to 4 sentences of engaging and informative text for each concept.
         - Explain the concept clearly and concisely, making it educational and enjoyable for readers.
         - Relate the text to the visual description to reinforce learning.
+        - If a disability is specified, adapt the explanations and examples to be more inclusive and effective for learners with that disability.
 
         Ensure the output is valid JSON format with matching numbers of detailed visual descriptions and educational texts.
         """
@@ -82,58 +84,77 @@ class StoryGenerationService:
             # If parsing fails, use GPT-4 to fix the JSON
             return await self._fix_json_with_gpt4(generated_text)
 
-    async def _fix_json_with_gpt4(self, invalid_json: str) -> str:
+    async def _fix_json_with_gpt4(
+        self, invalid_json: str, max_attempts: int = 3
+    ) -> str:
         """
-        Use GPT-4 to fix invalid JSON.
+        Use GPT-4 to fix invalid JSON with multiple attempts.
 
         Args:
         - invalid_json (str): The invalid JSON string.
+        - max_attempts (int): Maximum number of attempts to fix the JSON.
 
         Returns:
         - str: A valid JSON string.
+
+        Raises:
+        - ValueError: If unable to fix the JSON after max_attempts.
         """
-        prompt = f"""
-        The following text was supposed to be a valid JSON object, but it contains errors. 
-        Please fix the JSON and ensure it follows this structure:
+        for attempt in range(max_attempts):
+            try:
+                prompt = f"""
+                The following text was supposed to be a valid JSON object, but it contains errors. 
+                Please fix the JSON and ensure it follows this structure:
 
-        {{
-            "Prompt": "The original prompt",
-            "Title": "The educational topic title",
-            "Scenes": [
-                "Detailed visual description 1",
-                "Detailed visual description 2",
-                ...
-            ],
-            "Summaries": [
-                "Concept 1 educational text",
-                "Concept 2 educational text",
-                ...
-            ]
-        }}
+                {{
+                    "Prompt": "The original prompt",
+                    "Title": "The educational topic title",
+                    "Scenes": [
+                        "Scene 1 content",
+                        "Scene 2 content",
+                        ...
+                    ],
+                    "Summaries": [
+                        "Summary for Scene 1",
+                        "Summary for Scene 2",
+                        ...
+                    ]
+                }}
 
-        Make sure there are 10 scenes and 10 summaries.
-        Here's the invalid JSON:
+                Make sure there are 10 scenes and 10 summaries.
+                Here's the invalid JSON:
 
-        {invalid_json}
+                {invalid_json}
 
-        Please provide only the corrected JSON as your response, with no additional explanation.
-        """
+                Please provide only the corrected JSON as your response, with no additional explanation.
+                """
 
-        response = self.openai_client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a helpful assistant that fixes JSON formatting issues.",
-                },
-                {"role": "user", "content": prompt},
-            ],
-        )
+                response = self.openai_client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "You are a helpful assistant that fixes JSON formatting issues.",
+                        },
+                        {"role": "user", "content": prompt},
+                    ],
+                )
 
-        fixed_json = response.choices[0].message.content.strip()
+                fixed_json = response.choices[0].message.content.strip()
 
-        try:
-            json.loads(fixed_json)  # Validate the fixed JSON
-            return fixed_json
-        except json.JSONDecodeError as e:
-            raise ValueError(f"GPT-4 was unable to fix the JSON. Error: {str(e)}")
+                # Validate the fixed JSON
+                json.loads(fixed_json)
+                return fixed_json
+
+            except json.JSONDecodeError as e:
+                if attempt == max_attempts - 1:
+                    raise ValueError(
+                        f"Failed to fix JSON after {max_attempts} attempts. Last error: {str(e)}"
+                    )
+                else:
+                    print(f"Attempt {attempt + 1} failed. Retrying...")
+                    # Use the output from the previous attempt as input for the next attempt
+                    invalid_json = fixed_json
+
+        # This line should never be reached due to the raise in the loop, but it's here for completeness
+        raise ValueError(f"Failed to fix JSON after {max_attempts} attempts.")
