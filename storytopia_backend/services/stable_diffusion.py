@@ -63,6 +63,7 @@ class ImageGenerationService:
                     response = self.openai_client.images.generate(
                         model="dall-e-3",
                         prompt=f"{description}{disability_prompt} | Remove all dialogue/text in image. Use this artistic style for the image: {style}",
+
                         size="1792x1024",
                         quality="standard",
                         n=1,
@@ -76,26 +77,36 @@ class ImageGenerationService:
                     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
 
                     # Create a unique blob name using the timestamp
-                    blob_name = f"{self.folder_name}/scene_{index + 1}_{timestamp}.png"
+                    blob_name = f"{
+                        self.folder_name}/scene_{index + 1}_{timestamp}.png"
 
                     blob = self.bucket.blob(blob_name)
-                    blob.upload_from_string(image_content, content_type="image/png")
+                    blob.upload_from_string(
+                        image_content, content_type="image/png")
                     # Make the blob publicly accessible
                     blob.make_public()
                     # Add the public URL to the list
                     image_urls.append(blob.public_url)
                     break  # Successfully generated and uploaded the image, exit the retry loop
                 except Exception as e:
-                    print(f"Error generating image for scene {index + 1}: {str(e)}")
+                    print(f"Error generating image for scene {
+                          index + 1}: {str(e)}")
                     if retry_count < max_retries - 1:
                         retry_count += 1
-                        print(f"Retrying... Attempt {retry_count + 1} of {max_retries}")
+                        print(f"Retrying... Attempt {
+                              retry_count + 1} of {max_retries}")
                         # Regenerate the description
                         new_description = await self.regenerate_description(description)
                         description = new_description
                         # Add a small delay before retrying
                         await asyncio.sleep(random.uniform(1, 3))
                     else:
+
+                        print(f"Failed to generate image after {
+                              max_retries} attempts.")
+                        # You might want to add a placeholder image or handle this case as appropriate
+                        image_urls.append(None)
+
                         error_msg = f"Failed to generate image after {max_retries} attempts for scene {index + 1}."
                         print(error_msg)
                         raise MaxRetriesExceededError(error_msg)
@@ -104,6 +115,7 @@ class ImageGenerationService:
             raise ImageGenerationError(
                 f"Generated {len(image_urls)} images, but expected {len(scene_descriptions)}."
             )
+
 
         return image_urls
 
