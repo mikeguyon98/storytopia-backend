@@ -54,6 +54,7 @@ class StoryGenerationService:
         - Include vivid details about the characters, setting, or action that make the learning experience come alive.
         - Weave in educational content naturally, using the story elements to illustrate concepts.
         - Ensure each scene builds on the previous one to create a cohesive narrative arc.
+        - Avoid plot about the same character travel through time.
         - If a disability is specified, make sure the descriptions are inclusive and meaningful for individuals with that disability.
         For each summary in "Summaries" (create exactly 10 summaries, one for each scene):
         - Provide story text for each scene, each around 3 to 4 sentences
