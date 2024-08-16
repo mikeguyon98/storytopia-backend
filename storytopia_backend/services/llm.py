@@ -20,58 +20,57 @@ class StoryGenerationService:
 
     async def generate_story(self, prompt: str, disability: str = None) -> str:
         """
-        Generate educational content based on the given prompt, considering any specified disability.
+        Generate an educational story based on the given prompt, considering any specified disability.
 
         Args:
         - prompt (str): The educational topic or concept to explore.
         - disability (str, optional): The specific disability to consider (e.g., "color blindness", "dyslexia").
 
         Returns:
-        - str: A JSON string containing the prompt, title, detailed visual descriptions, and educational text for each concept.
+        - str: A JSON string containing the story elements.
         """
         disability_consideration = ""
         if disability:
             disability_consideration = f"""
-            Consider the following disability when generating the content: {disability}
-            - For visual descriptions, ensure they are accessible and meaningful for individuals with this disability.
-            - For educational text, adapt the explanations and examples to be more inclusive and effective for learners with this disability.
+            Consider the following disability when crafting the story: {disability}
+            - Ensure all descriptions and explanations are accessible and meaningful for individuals with this disability.
+            - Adapt the narrative, examples, and learning elements to be inclusive and effective for learners with this disability.
             """
 
         full_prompt = f"""
-        Generate educational content with a concise title and 10 concept descriptions based on the following prompt: {prompt}
+        Generate a comic book story title and 10 scene descriptions based on the following prompt: {prompt}
+
+        The narrative should be educational, fun, and immersive, incorporating historical examples and interesting backgrounds.
 
         {disability_consideration}
 
         The output should be a JSON object with the following structure:
         {{
             "Prompt": "The original prompt",
-            "Title": "The educational topic title",
+            "Title": "A concise title",
             "Scenes": [
-                "Scene 1 content",
-                "Scene 2 content",
+                "Scene 1: Vivid description of the story setting and action",
+                "Scene 2: Continuation of the narrative with educational elements woven in",
                 ...
             ],
             "Summaries": [
-                "Summary for Scene 1",
-                "Summary for Scene 2",
                 ...
             ]
         }}
 
-        For each detailed visual description in "Scenes":
-        - Focus on clear, visually descriptive elements that illustrate the educational concept.
-        - Include relevant visual details about examples or scenarios that explain the concept.
-        - Ensure the visual descriptions contribute to a cohesive and engaging educational narrative.
-        - Keep the description suitable for a general audience, avoiding any sensitive or controversial content.
-        - If a disability is specified, ensure the descriptions are accessible and meaningful for individuals with that disability.
+        For each scene in "Scenes" (create 10 scenes):
+        - Describe an engaging part of the story that relates to the prompt.
+        - Include vivid details about the characters, setting, or action that make the learning experience come alive.
+        - Weave in educational content naturally, using the story elements to illustrate concepts.
+        - Ensure each scene builds on the previous one to create a cohesive narrative arc.
+        - If a disability is specified, make sure the descriptions are inclusive and meaningful for individuals with that disability.
 
-        For each educational text in "Summaries":
-        - Provide 3 to 4 sentences of engaging and informative text for each concept.
-        - Explain the concept clearly and concisely, making it educational and enjoyable for readers.
-        - Relate the text to the visual description to reinforce learning.
-        - If a disability is specified, adapt the explanations and examples to be more inclusive and effective for learners with that disability.
+        For each summary in "Summaries" (create 10 summaries, one for each scene):
+        - Provide story text for each scene, each around 3 to 4 sentences
+        - Make it engaging, enjoyable and educational for readers to read.
+        - If a disability is specified, adapt the explanations to be more accessible and effective for learners with that disability.
 
-        Ensure the output is valid JSON format with matching numbers of detailed visual descriptions and educational texts.
+        Ensure the output is in valid JSON format with 10 matching scenes and summaries.
         """
 
         response = self.model.generate_content(full_prompt)
@@ -110,13 +109,9 @@ class StoryGenerationService:
                     "Prompt": "The original prompt",
                     "Title": "The educational topic title",
                     "Scenes": [
-                        "Scene 1 content",
-                        "Scene 2 content",
                         ...
                     ],
                     "Summaries": [
-                        "Summary for Scene 1",
-                        "Summary for Scene 2",
                         ...
                     ]
                 }}
