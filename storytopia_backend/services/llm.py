@@ -29,7 +29,6 @@ class StoryGenerationService:
         }
 
     async def generate_story(self, prompt: str, disability: str = None) -> str:
-
         """
         Generate an educational story based on the given prompt, considering any specified disability.
         Args:
@@ -38,7 +37,6 @@ class StoryGenerationService:
         Returns:
         - str: A JSON string containing the story elements.
         """
-
         disability_consideration = ""
         if disability:
             disability_consideration = f"""
@@ -56,10 +54,8 @@ class StoryGenerationService:
         - Include vivid details about the characters, setting, or action that make the learning experience come alive.
         - Weave in educational content naturally, using the story elements to illustrate concepts.
         - Ensure each scene builds on the previous one to create a cohesive narrative arc.
-        - Avoid plot about the same character travel through time.
         - If a disability is specified, make sure the descriptions are inclusive and meaningful for individuals with that disability.
         For each summary in "Summaries" (create exactly 10 summaries, one for each scene):
-
         - Provide story text for each scene, each around 3 to 4 sentences
         - Make it engaging, enjoyable and educational for readers to read.
         - If a disability is specified, adapt the explanations to be more accessible and effective for learners with that disability.

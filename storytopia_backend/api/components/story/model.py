@@ -28,6 +28,7 @@ class Story(BaseModel):
         likes (int): The number of likes the story has received.
         saves (int): The number of times the story has been saved.
     """
+
     audio_files: List[str]
     title: str
     author: str
