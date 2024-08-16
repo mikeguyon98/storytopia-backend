@@ -1,9 +1,5 @@
 import json
-from typing import List, Dict, Any
-import os
-import asyncio
 import vertexai
-from openai import OpenAI
 from vertexai.generative_models import GenerativeModel, GenerationConfig
 from dotenv import load_dotenv
 import jsonschema
@@ -12,12 +8,9 @@ load_dotenv()
 
 
 class StoryGenerationService:
-    def __init__(
-        self, project_id: str, location: str, model_name: str, openai_client: OpenAI
-    ):
+    def __init__(self, project_id: str, location: str, model_name: str):
         vertexai.init(project=project_id, location=location)
         self.model = GenerativeModel(model_name)
-        self.openai_client = openai_client
         self.response_schema = {
             "type": "object",
             "properties": {

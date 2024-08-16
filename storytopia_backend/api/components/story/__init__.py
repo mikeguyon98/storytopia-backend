@@ -29,7 +29,6 @@ story_service_config = {
     "project_id": GOOGLE_CLOUD_PROJECT,
     "location": GOOGLE_CLOUD_LOCATION,
     "model_name": "gemini-1.5-pro",
-    "openai_client": openai_client,
 }
 
 
