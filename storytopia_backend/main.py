@@ -21,18 +21,14 @@ async def root():
     Root endpoint that returns a welcome message.
 
     Returns:
-        dict: A dictionary containing a welcome message.
+    dict: A dictionary containing a welcome message.
     """
     return {"message": "Welcome to the API"}
 
-origins = [
-    "http://localhost:3001",  # Replace with your actual origins
-    "http://localhost:3000",
-]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],  # This allows all origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

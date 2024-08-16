@@ -1,10 +1,8 @@
 import json
-from typing import List
-import os
-import asyncio
 import vertexai
-from vertexai.generative_models import GenerativeModel
+from vertexai.generative_models import GenerativeModel, GenerationConfig
 from dotenv import load_dotenv
+import jsonschema
 
 load_dotenv()
 
@@ -13,94 +11,133 @@ class StoryGenerationService:
     def __init__(self, project_id: str, location: str, model_name: str):
         vertexai.init(project=project_id, location=location)
         self.model = GenerativeModel(model_name)
-
-
-    async def generate_story(self, prompt: str, disabilities: str) -> List[str]:
-
-    async def generate_story(self, prompt: str) -> str:
-
-        """
-        Generate a multi-scene book story based on the given prompt.
-
-        Args:
-        - prompt (str): The prompt for the story.
-
-        Returns:
-        - str: A JSON string containing the prompt, title, detailed scenes, and story text to accompany each image.
-        The JSON structure is:
-        {
-            "Prompt": string,
-            "Title": string,
-            "Scenes": List[string],
-            "Summaries": List[string]
+        self.response_schema = {
+            "type": "object",
+            "properties": {
+                "Prompt": {"type": "string"},
+                "Title": {"type": "string"},
+                "Scenes": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                },
+                "Summaries": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                },
+            },
+            "required": ["Prompt", "Title", "Scenes", "Summaries"],
         }
 
-        Raises:
-        - json.JSONDecodeError: If the generated content is not valid JSON.
+    async def generate_story(self, prompt: str, disability: str = None) -> str:
+
         """
+        Generate an educational story based on the given prompt, considering any specified disability.
+        Args:
+        - prompt (str): The educational topic or concept to explore.
+        - disability (str, optional): The specific disability to consider (e.g., "color blindness", "dyslexia").
+        Returns:
+        - str: A JSON string containing the story elements.
+        """
+
+        disability_consideration = ""
+        if disability:
+            disability_consideration = f"""
+            Consider the following disability when crafting the story: {disability}
+            - Ensure all descriptions and explanations are accessible and meaningful for individuals with this disability.
+            - Adapt the narrative, examples, and learning elements to be inclusive and effective for learners with this disability.
+            """
 
         full_prompt = f"""
         Generate a comic book story title and 10 scene descriptions based on the following prompt: {prompt}
-        If there are disabilities listed here: {disabilities} then when you are generating the prompt keep in mind these disabilities, and make it so that a read
-        with these disabilities could easily read the story. Only take into consideration disabilities that would effect the readers
-        ability to read the story and do not make it obvious you know the disability, just write the story they would enjoy.
-        The output should be a JSON object with the following structure:
-        {{
-            "Prompt": "The original prompt",
-            "Title": "The story title",
-            "Scenes": [
-                "Detailed scene 1 description",
-                "Detailed scene 2 description",
-                ...
-            ],
-            "Summaries": [
-                "scene 1 story text",
-                "scene 2 story text",
-                ...
-            ]
-        }}
+        The narrative should be educational, fun, and immersive, incorporating historical examples and interesting backgrounds.
+        {disability_consideration}
+        For each scene in "Scenes" (create exactly 10 scenes):
+        - Describe an engaging part of the story that relates to the prompt.
+        - Include vivid details about the characters, setting, or action that make the learning experience come alive.
+        - Weave in educational content naturally, using the story elements to illustrate concepts.
+        - Ensure each scene builds on the previous one to create a cohesive narrative arc.
+        - If a disability is specified, make sure the descriptions are inclusive and meaningful for individuals with that disability.
+        For each summary in "Summaries" (create exactly 10 summaries, one for each scene):
 
-        For each detailed scene description in "Scenes":
-        - Focus on clear, visually descriptive elements that can be depicted in a single image.
-        - Include relevant visual details about characters, setting, and action.
-        - Ensure the scenes contribute to a cohesive and engaging narrative arc.
-        - Dialogue (subtitle) should be brief and contribute positively to the story.
-        - Keep the description suitable for a general audience, avoiding any sensitive or controversial content.
-        - Ensure there are no copyright issues by not requesting specific copyrighted characters, logos, or branded content.
-        - Avoid requesting images of real people, especially public figures or celebrities.
-        - Don't include explicit violence, gore, or disturbing imagery in your prompts.
-        - Avoid prompts that could generate hate speech, discriminatory content, or extreme political imagery.
-
-        For each story text in "Summaries":
         - Provide story text for each scene, each around 3 to 4 sentences
         - Make it engaging, enjoyable and educational for readers to read.
-
-        Ensure the output is valid JSON format with matching numbers of detailed scenes and summaries.
+        - If a disability is specified, adapt the explanations to be more accessible and effective for learners with that disability.
+        Ensure the output is in valid JSON format with the following structure:
+        
+        "Prompt": "The original user prompt (exactly as provided)",
+        "Title": "The generated story title",
+        "Scenes": ["Scene 1 description", "Scene 2 description", ..., "Scene 10 description"],
+        "Summaries": ["Summary 1", "Summary 2", ..., "Summary 10"]
+        
         """
 
-        response = self.model.generate_content(full_prompt)
-        generated_text = response.text
+        response = self.model.generate_content(
+            full_prompt,
+            generation_config=GenerationConfig(
+                response_mime_type="application/json",
+                response_schema=self.response_schema,
+            ),
+        )
 
-        try:
-            json.loads(generated_text)  # Validate JSON structure
-            return generated_text  # Return the original JSON string if valid
-        except json.JSONDecodeError as e:
-            # If parsing fails, raise the JSONDecodeError
-            raise json.JSONDecodeError(
-                f"Invalid JSON generated: {str(e)}", generated_text, 0
-            ) from None
+        return await self._self_heal_response(response.text, prompt, full_prompt)
 
+    async def _self_heal_response(
+        self,
+        response_text: str,
+        original_prompt: str,
+        full_prompt: str,
+        attempts: int = 3,
+    ) -> str:
+        """
+        Attempt to self-heal the response if it's not valid JSON or doesn't follow the schema.
+        Args:
+        - response_text (str): The original response text from the model.
+        - original_prompt (str): The original prompt entered by the user.
+        - full_prompt (str): The full prompt used to generate the story.
+        - attempts (int): The number of attempts to self-heal (default: 3).
+        Returns:
+        - str: A valid JSON string containing the story elements.
+        Raises:
+        - ValueError: If unable to generate a valid response after the specified number of attempts.
+        """
+        for i in range(attempts):
+            try:
+                response_json = json.loads(response_text)
+                jsonschema.validate(instance=response_json, schema=self.response_schema)
 
-# # Sample test
-# if __name__ == "__main__":
-#     # Create StoryGenerationService instance
-#     story_service = StoryGenerationService(
-#         os.getenv("GOOGLE_CLOUD_PROJECT"),
-#         os.getenv("GOOGLE_CLOUD_LOCATION"),
-#         "gemini-1.5-pro",
-#     )
+                # Ensure the Prompt field matches the original user prompt
+                if response_json["Prompt"] != original_prompt:
+                    response_json["Prompt"] = original_prompt
+                    response_text = json.dumps(response_json)
 
-#     # Test generate_story function
-#     test_prompt = "Nobel Prize Winner in Chemistry wins UFC Welterweight Title"
-#     testing_story_parts = asyncio.run(story_service.generate_story(test_prompt))
-#     print(testing_story_parts)
+                return response_text
+            except (json.JSONDecodeError, jsonschema.ValidationError) as e:
+                if i == attempts - 1:
+                    raise ValueError(
+                        f"Unable to generate a valid response after {attempts} attempts: {str(e)}"
+                    )
+
+                heal_prompt = f"""
+                The previous response was invalid or incomplete. Please fix the following issues and regenerate the story:
+                Error: {str(e)}
+                Original user prompt: {original_prompt}
+                Full prompt used: {full_prompt}
+                Previous response: {response_text}
+                Please ensure the output is in valid JSON format and follows this schema:
+                {json.dumps(self.response_schema, indent=2)}
+                Make sure the "Prompt" field contains the exact original user prompt: "{original_prompt}"
+                Ensure there are exactly 10 Scenes and 10 Summaries.
+                """
+
+                response = self.model.generate_content(
+                    heal_prompt,
+                    generation_config=GenerationConfig(
+                        response_mime_type="application/json",
+                        response_schema=self.response_schema,
+                    ),
+                )
+                response_text = response.text
+
+        raise ValueError(
+            f"Unable to generate a valid response after {attempts} attempts"
+        )

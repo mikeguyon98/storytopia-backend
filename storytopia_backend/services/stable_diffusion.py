@@ -47,9 +47,13 @@ class ImageGenerationService:
         self.folder_name = folder_name
 
     async def generate_images(
-        self, scene_descriptions: List[str], style: str, disabilities: str
+        self, scene_descriptions: List[str], style: str, disability: str = None
     ) -> List[str]:
         image_urls = []
+        disability_prompt = ""
+        if disability:
+            disability_prompt = f" Consider {disability} when creating the image. Ensure the image is accessible and meaningful for individuals with this disability."
+
         for index, description in enumerate(scene_descriptions):
             retry_count = 0
             max_retries = 3
@@ -58,9 +62,8 @@ class ImageGenerationService:
                     # Generate image using DALL-E 3
                     response = self.openai_client.images.generate(
                         model="dall-e-3",
-                        prompt=f"{description} | Remove all dialogue/text in image. Use this artistic style for the image: {
-                            style}. If there are disabilities listed here:"
-                        + "{disabilities} that would effect the viewers eyes / ability to see, such as color blindness, ect.. then take that into account to make images that people with these disabilites could easily view",
+                        prompt=f"{description}{disability_prompt} | Remove all dialogue/text in image. Use this artistic style for the image: {style}",
+
                         size="1792x1024",
                         quality="standard",
                         n=1,
