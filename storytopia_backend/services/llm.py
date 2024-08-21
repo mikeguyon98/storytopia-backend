@@ -47,25 +47,30 @@ class StoryGenerationService:
 
         full_prompt = f"""
         Generate a comic book story title and 10 scene descriptions based on the following prompt: {prompt}
-        The narrative should be educational, fun, and immersive, incorporating historical examples and interesting backgrounds.
-        {disability_consideration}
-        For each scene in "Scenes" (create exactly 10 scenes):
-        - Describe an engaging part of the story that relates to the prompt.
-        - Include vivid details about the characters, setting, or action that make the learning experience come alive.
-        - Weave in educational content naturally, using the story elements to illustrate concepts.
-        - Ensure each scene builds on the previous one to create a cohesive narrative arc.
-        - If a disability is specified, make sure the descriptions are inclusive and meaningful for individuals with that disability.
-        For each summary in "Summaries" (create exactly 10 summaries, one for each scene):
-        - Provide story text for each scene, each around 3 to 4 sentences
-        - Make it engaging, enjoyable and educational for readers to read.
-        - If a disability is specified, adapt the explanations to be more accessible and effective for learners with that disability.
+
         Ensure the output is in valid JSON format with the following structure:
         
         "Prompt": "The original user prompt (exactly as provided)",
         "Title": "The generated story title",
         "Scenes": ["Scene 1 description", "Scene 2 description", ..., "Scene 10 description"],
         "Summaries": ["Summary 1", "Summary 2", ..., "Summary 10"]
-        
+
+        For each scene in "Scenes" (create exactly 10 scenes):
+        - Focus on clear, visually descriptive elements that can be depicted in a single image.
+        - Include relevant visual details about characters, setting, and action.
+        - Ensure the scenes contribute to a cohesive and engaging narrative arc.
+        - Dialogue (subtitle) should be brief and contribute positively to the story.
+        - Keep the description suitable for a general audience, avoiding any sensitive or controversial content.
+        - Ensure there are no copyright issues by not requesting specific copyrighted characters, logos, or branded content.
+        - Avoid requesting images of real people, especially public figures or celebrities.
+        - Don't include explicit violence, gore, or disturbing imagery in your prompts.
+        - Avoid prompts that could generate hate speech, discriminatory content, or extreme political imagery.
+
+        For each summary in "Summaries" (create exactly 10 summaries, one for each scene):
+        - Provide story text for each scene, each around 3 to 4 sentences
+        - Make it engaging, enjoyable and educational for readers to read.
+
+        {disability_consideration}
         """
 
         response = self.model.generate_content(
