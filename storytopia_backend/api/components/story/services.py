@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict, Any
 from .model import StoryPost, Story
 from storytopia_backend.api.components.user.model import User
 from datetime import datetime, timezone
@@ -10,8 +10,6 @@ from .repository import (
     send_story_generation_email,
     send_story_generation_failure_email,
 )
-from storytopia_backend.services.llm import StoryGenerationService
-from storytopia_backend.services.stable_diffusion import ImageGenerationService
 from storytopia_backend.api.components.user.repository import (
     update_user,
     get_user_by_id,
@@ -20,6 +18,7 @@ from google.cloud import storage
 from storytopia_backend.api.components.story import (
     image_service,
     story_service,
+    tidb_vector_service,
 )
 import json
 from google.cloud import texttospeech
@@ -29,6 +28,7 @@ from storytopia_backend.firebase_config import db
 import uuid
 from fastapi import BackgroundTasks
 import os
+from llama_index.core import Document
 
 GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME")
 
@@ -177,6 +177,17 @@ async def generate_story_with_images(
         )
         story.audio_files = urls
         await update_story(story)
+
+        # vectordb
+        tidb_vector_service.setup_index(current_user.id)
+
+        content = f"Title: {story.title}\n\nPrompt: {story.description}\n\nStory:\n"
+        content += "\n".join(story.story_pages)
+        metadata = {"author_id": story.author_id, "story_id": story.id}
+        story_document = Document(text=content, metadata=metadata)
+
+        # Add the document to the vector store
+        tidb_vector_service.add_documents([story_document])
 
         # Send email notification
         await send_story_generation_email(current_user.id, story.description)

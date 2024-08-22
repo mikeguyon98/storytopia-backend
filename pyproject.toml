@@ -83,6 +83,8 @@ twisted = "^24.3.0"
 aiohttp = "^3.10.3"
 google-cloud-texttospeech = "^2.16.5"
 jsonschema = "^4.23.0"
+llama-index = "^0.10.68"
+llama-index-vector-stores-tidbvector = "^0.1.2"
 
 
 [tool.poetry.group.dev.dependencies]
