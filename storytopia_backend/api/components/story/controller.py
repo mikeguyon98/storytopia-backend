@@ -8,7 +8,6 @@ from .model import (
     Story,
     GenerateStoryRequest,
     RecommendationResponse,
-    RecommendationRequest,
 )
 from .services import (
     create_user_story,
@@ -204,9 +203,7 @@ async def toggle_privacy(story_id: str, current_user: User = Depends(get_current
 
 
 @router.post("/recommendations", response_model=RecommendationResponse)
-async def get_recommendations(
-    request: RecommendationRequest, current_user: User = Depends(get_current_user)
-):
+async def get_recommendations(current_user: User = Depends(get_current_user)):
     """
     Generate a story prompt recommendation, considering if the user is new or has existing stories.
     """
