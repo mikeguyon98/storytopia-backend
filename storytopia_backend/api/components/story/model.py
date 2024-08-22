@@ -63,3 +63,12 @@ class GenerateStoryRequest(BaseModel):
     style: str
     private: bool
     disability: Optional[str] = None
+
+
+class RecommendationRequest(BaseModel):
+    user_id: str
+
+
+class RecommendationResponse(BaseModel):
+    recommendation: str
+    is_new_user: bool

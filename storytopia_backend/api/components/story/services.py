@@ -1,7 +1,8 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 from .model import StoryPost, Story
 from storytopia_backend.api.components.user.model import User
 from datetime import datetime, timezone
+from openai import OpenAI
 from .repository import (
     create_story,
     get_story_by_id,
@@ -339,3 +340,50 @@ async def toggle_story_privacy(story_id: str, user_id: str) -> Story:
     await update_user(user)
 
     return story
+
+
+async def generate_recommendation(user_id: str) -> Tuple[str, bool]:
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    try:
+        tidb_vector_service.setup_index(user_id)
+        query_result = tidb_vector_service.query(
+            "Summarize the user's story themes and interests"
+        )
+        is_new_user = False
+    except Exception:
+        # If setup_index or query fails, it's likely because the user has no stories
+        query_result = "New user with no previous stories."
+        is_new_user = True
+
+    prompt = f"""Based on the following summary of the user's previous stories (or lack thereof):
+
+        {query_result}
+
+        Please generate a few story prompts that user can feed in Generative AI application to create new educational content.
+
+        For example:
+        - If the user has shown interest in sports, suggest prompts like "The History of Tennis" or "The Evolution of Surfing".
+        - If it's a new user, provide a range of engaging educational topics that could appeal to various interests.
+
+        Aim to provide around 8 diverse prompts, each on a new line. 
+        For old user, 5 prompts should be tailored to the user's interests if available; the other prompts should be novel topics that can expand user's horizon.
+        For new user, the prompts should vary in a wide range of topics.
+        Make sure the prompts are welcoming, descriptive, and specific, and encourage the creation of informative, educational content.
+        The prompt should be concise, generally fewer than 8 words.
+
+        In the output, just provide the prompts.
+        """
+
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a creative educational content assistant, skilled at generating inspiring prompts for AI-powered learning materials.",
+            },
+            {"role": "user", "content": prompt},
+        ],
+    )
+
+    recommendation = response.choices[0].message.content.strip()
+    return recommendation, is_new_user

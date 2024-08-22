@@ -3,7 +3,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from storytopia_backend.api.middleware.auth import get_current_user
 from storytopia_backend.api.components.user.model import User
 from .repository import get_all_stories, update_story
-from .model import StoryPost, Story, GenerateStoryRequest
+from .model import (
+    StoryPost,
+    Story,
+    GenerateStoryRequest,
+    RecommendationResponse,
+    RecommendationRequest,
+)
 from .services import (
     create_user_story,
     get_story,
@@ -15,6 +21,7 @@ from .services import (
     unlike_story,
     unsave_story,
     generate_speech_for_page,
+    generate_recommendation,
 )
 from dotenv import load_dotenv
 import asyncio
@@ -194,3 +201,16 @@ async def toggle_privacy(story_id: str, current_user: User = Depends(get_current
         raise HTTPException(status_code=403, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+
+
+@router.post("/recommendations", response_model=RecommendationResponse)
+async def get_recommendations(
+    request: RecommendationRequest, current_user: User = Depends(get_current_user)
+):
+    """
+    Generate a story prompt recommendation, considering if the user is new or has existing stories.
+    """
+    recommendation, is_new_user = await generate_recommendation(current_user.id)
+    return RecommendationResponse(
+        recommendation=recommendation, is_new_user=is_new_user
+    )
