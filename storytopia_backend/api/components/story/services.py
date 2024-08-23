@@ -371,7 +371,7 @@ async def generate_recommendation(user_id: str) -> Tuple[str, bool]:
         Make sure the prompts are welcoming, descriptive, and specific, and encourage the creation of informative, educational content.
         The prompt should be concise, generally fewer than 8 words.
 
-        In the output, just provide the prompts.
+        In the output, just provide the prompts (no bullet point)
         """
 
     response = client.chat.completions.create(
