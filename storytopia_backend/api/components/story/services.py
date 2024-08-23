@@ -375,7 +375,7 @@ async def generate_recommendation(user_id: str) -> Tuple[str, bool]:
         """
 
     response = client.chat.completions.create(
-        model="gpt-4",
+        model="gpt-4o-mini",
         messages=[
             {
                 "role": "system",
