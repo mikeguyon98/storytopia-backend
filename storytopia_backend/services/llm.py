@@ -35,7 +35,7 @@ class StoryGenerationService:
             "required": ["Prompt", "Title", "Scenes", "Summaries"],
         }
 
-    async def generate_story(self, prompt: str, disability: str = None) -> str:
+    async def generate_story(self, prompt: str, disability: str = None, user_id: str = None) -> str:
         """
         Generate an educational story based on the given prompt, considering any specified disability.
         Args:
@@ -49,7 +49,7 @@ class StoryGenerationService:
         TIDB_HOST = os.getenv("TIDB_HOST")
         wiki_vector_service = TiDBVectorService(TIDB_USERNAME, TIDB_PASSWORD, TIDB_HOST, database="wiki")
 
-        wiki_vector_service.setup_index(user_id="temp_wiki")
+        wiki_vector_service.setup_index(user_id=user_id)
 
 
         def do_prepare_data(url):
@@ -99,14 +99,14 @@ class StoryGenerationService:
         try:
             if wiki_articles:
                 wiki_urls = [article["url"] for article in wiki_articles]
-            wiki_vector_service.setup_index(user_id="temp_wiki")
+            wiki_vector_service.setup_index(user_id=user_id)
             print(wiki_urls)
             for url in wiki_urls:
                 do_prepare_data(url)
             result = wiki_vector_service.query(prompt)
             print(result)
             # Delete all data from the table
-            delete_all_data("temp_wiki", "wiki")
+            delete_all_data(user_id, "wiki")
         except Exception as e:
             print(f"Error processing Wikipedia articles: {str(e)}")
 

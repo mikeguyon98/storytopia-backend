@@ -138,7 +138,7 @@ async def generate_story_with_images(
     """
     try:
         # Generate story
-        story_json = await story_service.generate_story(prompt, disability)
+        story_json = await story_service.generate_story(prompt, disability, current_user.id)
         story_data = json.loads(story_json)
 
         # Generate images based on the detailed scene descriptions
