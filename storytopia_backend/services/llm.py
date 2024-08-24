@@ -1,8 +1,15 @@
 import json
 import vertexai
+import os
+from sqlalchemy import create_engine, text
+from sqlalchemy import URL
 from vertexai.generative_models import GenerativeModel, GenerationConfig
+from llama_index.readers.web import SimpleWebPageReader
+from storytopia_backend.services.vector_db import TiDBVectorService
 from dotenv import load_dotenv
 import jsonschema
+from storytopia_backend.services.wikipedia_service import wikipedia_search
+
 
 load_dotenv()
 
@@ -37,6 +44,44 @@ class StoryGenerationService:
         Returns:
         - str: A JSON string containing the story elements.
         """
+        TIDB_USERNAME = os.getenv("TIDB_USERNAME")
+        TIDB_PASSWORD = os.getenv("TIDB_PASSWORD")
+        TIDB_HOST = os.getenv("TIDB_HOST")
+        wiki_vector_service = TiDBVectorService(TIDB_USERNAME, TIDB_PASSWORD, TIDB_HOST, database="wiki")
+
+        wiki_vector_service.setup_index(user_id="temp_wiki")
+
+
+        def do_prepare_data(url):
+            documents = SimpleWebPageReader(html_to_text=True).load_data([url,])
+            print(documents)
+            wiki_vector_service.add_documents(documents)
+        
+        def delete_all_data(table_name, database_name):
+            # Create the database URL
+            tidb_connection_url = URL(
+                "mysql+pymysql",
+                username=os.environ['TIDB_USERNAME'],
+                password=os.environ['TIDB_PASSWORD'],
+                host=os.environ['TIDB_HOST'],
+                port=4000,
+                database=database_name,
+                query={"ssl_verify_cert": True, "ssl_verify_identity": True},
+            )
+    
+            # Create the SQLAlchemy engine
+            engine = create_engine(tidb_connection_url)
+            
+            # SQL command to delete all data
+            delete_command = text(f"DELETE FROM {table_name}")
+            
+            # Execute the command
+            with engine.connect() as connection:
+                connection.execute(delete_command)
+                connection.commit()
+            
+            print(f"All data deleted from table '{table_name}'")
+
         disability_consideration = ""
         if disability:
             disability_consideration = f"""
@@ -44,8 +89,33 @@ class StoryGenerationService:
             - Ensure all descriptions and explanations are accessible and meaningful for individuals with this disability.
             - Adapt the narrative, examples, and learning elements to be inclusive and effective for learners with this disability.
             """
+        wiki_articles = None
+        result = None
+        try:
+            wiki_articles = wikipedia_search(prompt)
+        except Exception as e:
+            print(f"Error searching Wikipedia: {str(e)}")
+        wiki_urls = []
+        try:
+            if wiki_articles:
+                wiki_urls = [article["url"] for article in wiki_articles]
+            wiki_vector_service.setup_index(user_id="temp_wiki")
+            print(wiki_urls)
+            for url in wiki_urls:
+                do_prepare_data(url)
+            result = wiki_vector_service.query(prompt)
+            print(result)
+            # Delete all data from the table
+            delete_all_data("temp_wiki", "wiki_db")
+        except Exception as e:
+            print(f"Error processing Wikipedia articles: {str(e)}")
+
 
         full_prompt = f"""
+        CONTEXT:
+        {result}
+
+        PROMPT:
         Generate a comic book story title and 10 scene descriptions based on the following prompt: {prompt}
 
         Ensure the output is in valid JSON format with the following structure:

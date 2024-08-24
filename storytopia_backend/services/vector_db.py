@@ -5,14 +5,14 @@ from typing import Optional, List, Dict, Any
 
 
 class TiDBVectorService:
-    def __init__(self, username, password, host):
+    def __init__(self, username, password, host, database = "test"):
         self.connection_url = URL(
             "mysql+pymysql",
             username=username,
             password=password,
             host=host,
             port=4000,
-            database="test",
+            database=database,
             query={"ssl_verify_cert": True, "ssl_verify_identity": True},
         )
         self.vector_store = None

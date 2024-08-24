@@ -180,15 +180,18 @@ async def generate_story_with_images(
         await update_story(story)
 
         # vectordb
-        tidb_vector_service.setup_index(current_user.id)
+        try:
+            tidb_vector_service.setup_index(current_user.id)
 
-        content = f"Title: {story.title}\n\nPrompt: {story.description}\n\nStory:\n"
-        content += "\n".join(story.story_pages)
-        metadata = {"author_id": story.author_id, "story_id": story.id}
-        story_document = Document(text=content, metadata=metadata)
+            content = f"Title: {story.title}\n\nPrompt: {story.description}\n\nStory:\n"
+            content += "\n".join(story.story_pages)
+            metadata = {"author_id": story.author_id, "story_id": story.id}
+            story_document = Document(text=content, metadata=metadata)
 
-        # Add the document to the vector store
-        tidb_vector_service.add_documents([story_document])
+            # Add the document to the vector store
+            tidb_vector_service.add_documents([story_document])
+        except Exception as e:
+            print(f"Error adding document to vector store: {e}")
 
         # Send email notification
         await send_story_generation_email(current_user.id, story.description)
