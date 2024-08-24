@@ -106,7 +106,7 @@ class StoryGenerationService:
             result = wiki_vector_service.query(prompt)
             print(result)
             # Delete all data from the table
-            delete_all_data("temp_wiki", "wiki_db")
+            delete_all_data("temp_wiki", "wiki")
         except Exception as e:
             print(f"Error processing Wikipedia articles: {str(e)}")
 
