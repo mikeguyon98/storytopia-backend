@@ -2,6 +2,7 @@ from typing import List, Dict, Any, Tuple
 from .model import StoryPost, Story
 from storytopia_backend.api.components.user.model import User
 from datetime import datetime, timezone
+import time
 from openai import OpenAI
 from .repository import (
     create_story,
@@ -179,19 +180,31 @@ async def generate_story_with_images(
         story.audio_files = urls
         await update_story(story)
 
+        # Prepare the document content and metadata outside the retry loop
+        content = f"Title: {story.title}\n\nPrompt: {story.description}\n\nStory:\n"
+        content += "\n".join(story.story_pages)
+        metadata = {"author_id": story.author_id, "story_id": story.id}
+        story_document = Document(text=content, metadata=metadata)
+
         # vectordb
-        try:
-            tidb_vector_service.setup_index(current_user.id)
+        max_retries = 3
+        retry_delay = 1  # Initial delay in seconds
 
-            content = f"Title: {story.title}\n\nPrompt: {story.description}\n\nStory:\n"
-            content += "\n".join(story.story_pages)
-            metadata = {"author_id": story.author_id, "story_id": story.id}
-            story_document = Document(text=content, metadata=metadata)
-
-            # Add the document to the vector store
-            tidb_vector_service.add_documents([story_document])
-        except Exception as e:
-            print(f"Error adding document to vector store: {e}")
+        for attempt in range(max_retries):
+            try:
+                tidb_vector_service.setup_index(current_user.id)
+                # Add the document to the vector store
+                tidb_vector_service.add_documents([story_document])
+                print("Document added successfully to vector store.")
+                break  # If successful, exit the retry loop
+            except Exception as e:
+                print(f"Attempt {attempt + 1} failed. Error adding document to vector store: {e}")
+                if attempt < max_retries - 1:
+                    print(f"Retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+                else:
+                    print(f"Failed to add document after {max_retries} attempts.")
 
         # Send email notification
         await send_story_generation_email(current_user.id, story.description)
