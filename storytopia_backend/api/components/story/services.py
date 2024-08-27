@@ -347,6 +347,7 @@ async def toggle_story_privacy(story_id: str, user_id: str) -> Story:
 
 async def generate_recommendation(user_id: str) -> Tuple[str, bool]:
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    query_result = None
     try:
         tidb_vector_service.setup_index(user_id)
         query_result = tidb_vector_service.query(
@@ -357,6 +358,8 @@ async def generate_recommendation(user_id: str) -> Tuple[str, bool]:
         # If setup_index or query fails, it's likely because the user has no stories
         query_result = "New user with no previous stories."
         is_new_user = True
+
+    print("Query result from DB:", query_result)
 
     prompt = f"""Based on the following summary of the user's previous stories (or lack thereof):
 
