@@ -2,10 +2,11 @@ from sqlalchemy import URL
 from llama_index.vector_stores.tidbvector import TiDBVectorStore
 from llama_index.core import VectorStoreIndex, StorageContext, Document
 from typing import Optional, List, Dict, Any
-
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+import pymysql
 
 class TiDBVectorService:
-    def __init__(self, username, password, host, database = "test"):
+    def __init__(self, username, password, host, database="test"):
         self.connection_url = URL(
             "mysql+pymysql",
             username=username,
@@ -20,6 +21,11 @@ class TiDBVectorService:
         self.storage_context = None
         self.query_engine = None
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=4, max=10),
+        retry=retry_if_exception_type(pymysql.err.OperationalError)
+    )
     def get_vector_store(self, user_id: str):
         self.vector_store = TiDBVectorStore(
             connection_string=self.connection_url,
@@ -30,6 +36,11 @@ class TiDBVectorService:
         )
         return self.vector_store
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=4, max=10),
+        retry=retry_if_exception_type(pymysql.err.OperationalError)
+    )
     def setup_index(self, user_id: Optional[str] = None):
         if not self.vector_store and user_id:
             self.get_vector_store(user_id)
@@ -44,6 +55,11 @@ class TiDBVectorService:
         )
         self.query_engine = self.vector_index.as_query_engine(streaming=True)
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=4, max=10),
+        retry=retry_if_exception_type(pymysql.err.OperationalError)
+    )
     def add_documents(
         self,
         documents: List[Document],
@@ -55,7 +71,6 @@ class TiDBVectorService:
                 "Index and storage context not set up. Call setup_index() first."
             )
 
-        # Add metadata to each document if provided
         if metadata:
             for doc in documents:
                 doc.metadata.update(metadata)
@@ -64,6 +79,11 @@ class TiDBVectorService:
             documents, storage_context=self.storage_context, show_progress=show_progress
         )
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=4, max=10),
+        retry=retry_if_exception_type(pymysql.err.OperationalError)
+    )
     def query(self, query_string: str):
         if not self.query_engine:
             raise ValueError("Query engine not set up. Call setup_index() first.")

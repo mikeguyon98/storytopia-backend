@@ -87,6 +87,9 @@ llama-index = "^0.10.68"
 llama-index-vector-stores-tidbvector = "^0.1.2"
 wikipedia-api = "^0.6.0"
 llama-index-readers-web = "0.1.8"
+tenacity = "^8.2.0"
+pymysql = "^1.1.1"
+
 
 
 [tool.poetry.group.dev.dependencies]
