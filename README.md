@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-cred = credentials.Certificate("./storytopia_backend/repurpose-ai-firebase-adminsdk-kf6c0-cd0dd6cdfd.json")
+cred = credentials.Certificate("./storytopia_backend/{firebase-adminsdk.json}")
 firebase_admin.initialize_app(cred)
 
 db = firestore.client()
